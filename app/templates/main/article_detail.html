@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<div class="prose-page article-detail">
+
+  <nav class="breadcrumb">
+    <a href="{{ url_for('main.index') }}">← Nieuws</a>
+  </nav>
+
+  <h1>{{ article.title }}</h1>
+
+  {# Source + dates meta bar #}
+  <div class="article-detail-meta">
+    <a href="{{ article.url }}" target="_blank" rel="noopener" class="article-detail-source">
+      <img src="https://www.google.com/s2/favicons?domain={{ article.source.base_url }}&sz=32"
+           class="source-favicon" alt="" width="16" height="16">
+      {{ article.source.name }}
+    </a>
+    <span class="meta-sep">·</span>
+    {% if article.published_at %}
+      <span title="Gepubliceerd">📅 {{ article.published_at.strftime('%-d %b %Y %H:%M') }}</span>
+      <span class="meta-sep">·</span>
+    {% endif %}
+    <span title="Eerste keer gezien door ons">👁 {{ article.created_at.strftime('%-d %b %Y %H:%M') }}</span>
+  </div>
+
+  {# External link button #}
+  <div style="margin: 1rem 0 1.5rem;">
+    <a href="{{ article.url }}" target="_blank" rel="noopener" class="btn-ext-link">
+      Lees origineel op {{ article.source.name }} ↗
+    </a>
+  </div>
+
+  {# Summary #}
+  <p class="lead">{{ article.summary }}</p>
+
+  {# Topics #}
+  {% if article.topics %}
+    <div class="article-topics" style="margin: 1.2rem 0;">
+      {% for topic in article.topics %}
+        <a href="{{ url_for('main.index', topic=topic.id) }}" class="tag">{{ topic.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# Stories & related articles #}
+  {% if related_per_story %}
+    <section class="article-detail-section">
+      <h2>Gerelateerde verhalen</h2>
+      {% for story, articles in related_per_story.items() %}
+        <div class="related-story">
+          <a href="{{ url_for('main.story_detail', story_id=story.id) }}" class="related-story-title">
+            ↗ {{ story.title }}
+          </a>
+          <ul class="related-article-list">
+            {% for a in articles[:8] %}
+              <li>
+                <img src="https://www.google.com/s2/favicons?domain={{ a.source.base_url }}&sz=32"
+                     class="source-favicon" alt="{{ a.source.name }}" width="14" height="14">
+                <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.title }}</a>
+                <span class="meta-muted">— {{ a.source.name }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  {# Same URL from other sources #}
+  {% if same_url_others %}
+    <section class="article-detail-section">
+      <h2>Ook gevonden bij</h2>
+      <ul class="source-list">
+        {% for a in same_url_others %}
+          <li>
+            <img src="https://www.google.com/s2/favicons?domain={{ a.source.base_url }}&sz=32"
+                 class="source-favicon" alt="{{ a.source.name }}" width="16" height="16">
+            <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.source.name }}</a>
+            <span class="meta-muted">— gezien {{ a.created_at.strftime('%-d %b %Y') }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {# Merge / clustering log #}
+  {% if merge_logs %}
+    <section class="article-detail-section">
+      <h2>Clusteringhistorie</h2>
+      <table class="merge-log-table">
+        <thead>
+          <tr><th>Verhaal</th><th>Actie</th><th>Uitkomst</th><th>Score</th><th>Datum</th></tr>
+        </thead>
+        <tbody>
+          {% for log in merge_logs %}
+            <tr>
+              <td><a href="{{ url_for('main.story_detail', story_id=log.story_id) }}">{{ log.story.title[:50] }}</a></td>
+              <td>{{ log.action }}</td>
+              <td>
+                {% if log.outcome == 'merged' %}<span class="badge-ok">✓ samengevoegd</span>
+                {% elif log.outcome == 'rejected' %}<span class="badge-no">✗ geweigerd</span>
+                {% elif log.outcome == 'pending' %}<span class="badge-wait">… wacht</span>
+                {% else %}{{ log.outcome }}{% endif %}
+              </td>
+              <td>{{ "%.0f%%"|format(log.similarity_score * 100) }}</td>
+              <td class="meta-muted">{{ log.created_at.strftime('%-d %b %Y') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endif %}
+
+</div>
+{% endblock %}

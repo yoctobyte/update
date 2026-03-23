@@ -1,0 +1,81 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Extractieregels{% endblock %}
+{% block content %}
+<h1>Extractieregels</h1>
+
+{% if unconfigured_sources %}
+  <section class="warning-section">
+    <h2>Bronnen zonder regels</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Bron</th><th>URL</th><th>Type</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for source in unconfigured_sources %}
+        <tr>
+          <td>{{ source.name }}</td>
+          <td><a href="{{ source.base_url }}" target="_blank" rel="noopener">{{ source.base_url }}</a></td>
+          <td>{{ source.type }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.source_init_rules', source_id=source.id) }}" style="display:inline">
+              <button class="btn btn-small btn-active">Regels aanmaken</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
+
+{% if pending_rules %}
+  <section>
+    <h2>Wachten op goedkeuring</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Bron</th><th>Van toepassing op</th><th>Type</th><th>Definitie</th><th></th></tr>
+      </thead>
+      <tbody id="rules-list">
+        {% for rule in pending_rules %}
+          {% include "admin/partials/rule_row.html" %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
+
+{% if approved_rules %}
+  <section>
+    <h2>Goedgekeurde regels</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Bron</th><th>Van toepassing op</th><th>Type</th><th>Definitie</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for rule in approved_rules %}
+        <tr>
+          <td>{{ rule.source.name }}</td>
+          <td><code class="url-pattern">{{ rule.url_pattern }}</code></td>
+          <td>{{ rule.rule_type }}</td>
+          <td><code>{% if rule.rule_definition %}{{ rule.rule_definition[:80] }}{% if rule.rule_definition|length > 80 %}…{% endif %}{% else %}<em>leeg</em>{% endif %}</code></td>
+          <td class="actions">
+            <a href="{{ url_for('admin.rule_preview', rule_id=rule.id) }}" class="btn btn-small">Voorbeeld</a>
+            <form method="post" action="{{ url_for('admin.source_add_rule', source_id=rule.source_id, purpose=rule.rule_purpose) }}" style="display:inline">
+              <button class="btn btn-small">+ Extra regel</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.rule_delete', rule_id=rule.id) }}" style="display:inline"
+                  onsubmit="return confirm('Regel verwijderen?')">
+              <button class="btn btn-small btn-danger">Verwijder</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
+
+{% if not pending_rules and not approved_rules and not unconfigured_sources %}
+  <p>Nog geen bronnen geconfigureerd.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Onderwerpen{% endblock %}
+{% block content %}
+<h1>Onderwerpen</h1>
+<p><a href="{{ url_for('admin.suggested_topics') }}" class="btn btn-small">Bekijk AI-suggesties →</a></p>
+
+<form method="post" action="{{ url_for('admin.topic_new') }}" class="inline-form">
+  <input type="text" name="name" placeholder="Nieuw onderwerp" required>
+  <input type="text" name="description" placeholder="Omschrijving (optioneel)">
+  <button type="submit" class="btn">Toevoegen</button>
+</form>
+
+<table class="data-table">
+  <thead>
+    <tr><th>Naam</th><th>Omschrijving</th><th>Artikelen</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for topic in topics %}
+      <tr>
+        <td><strong>{{ topic.name }}</strong></td>
+        <td>{{ topic.description or '—' }}</td>
+        <td>{{ topic.articles | length }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin.topic_delete', topic_id=topic.id) }}"
+                onsubmit="return confirm('Onderwerp verwijderen?')">
+            <button type="submit" class="btn btn-small btn-danger">Verwijder</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">Nog geen onderwerpen.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

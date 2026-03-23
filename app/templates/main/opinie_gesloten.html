@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Stuk niet meer bewerkbaar{% endblock %}
+{% block content %}
+
+<article class="prose-page">
+  <h1>Stuk niet meer bewerkbaar</h1>
+  <p>
+    Uw opiniestuk <em>"{{ opinion.title }}"</em> heeft de status
+    <strong>{{ opinion.status }}</strong> en kan niet meer worden gewijzigd.
+  </p>
+  {% if opinion.status == "published" %}
+    <p><a href="{{ url_for('main.opinie_detail', opinion_id=opinion.id) }}">Stuk lezen →</a></p>
+  {% endif %}
+  <p><a href="{{ url_for('main.opinie_list') }}">← Terug naar alle opinies</a></p>
+</article>
+
+{% endblock %}

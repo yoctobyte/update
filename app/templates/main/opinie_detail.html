@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ opinion.title }}{% endblock %}
+{% block content %}
+
+<article class="prose-page opinie-full">
+  <div class="opinie-meta">
+    <span class="opinie-author">{{ opinion.pen_name }}</span>
+    {% if opinion.published_at %}
+      <time>{{ opinion.published_at.strftime('%d %B %Y') }}</time>
+    {% endif %}
+    <span class="opinie-badge">Opinie</span>
+  </div>
+
+  <h1>{{ opinion.title }}</h1>
+
+  <div class="opinie-body">
+    {% for paragraph in opinion.body.split('\n') %}
+      {% if paragraph.strip() %}
+        <p>{{ paragraph }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <footer class="opinie-footer">
+    <a href="{{ url_for('main.opinie_list') }}">← Alle opinies</a>
+    &nbsp;·&nbsp;
+    <a href="{{ url_for('main.opinie_insturen') }}">Zelf een stuk insturen</a>
+  </footer>
+</article>
+
+{% endblock %}

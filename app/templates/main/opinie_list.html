@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Opinie{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Opinie</h1>
+  <a href="{{ url_for('main.opinie_insturen') }}" class="btn">Stuk insturen</a>
+</div>
+
+<p class="page-intro">
+  Elke Wageningse stem telt. Stuur een opiniestuk in — onder uw eigen naam of een schuilnaam.
+  Gepubliceerd na een korte redactionele check.
+</p>
+
+{% if pagination.items %}
+  <div class="opinie-list">
+    {% for op in pagination.items %}
+    <article class="opinie-card">
+      <div class="opinie-meta">
+        <span class="opinie-author">{{ op.pen_name }}</span>
+        {% if op.published_at %}
+          <time>{{ op.published_at.strftime('%d %b %Y') }}</time>
+        {% endif %}
+      </div>
+      <h2><a href="{{ url_for('main.opinie_detail', opinion_id=op.id) }}">{{ op.title }}</a></h2>
+      <p class="opinie-snippet">{{ op.body[:280] }}{% if op.body|length > 280 %}…{% endif %}</p>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="pagination">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('main.opinie_list', page=pagination.prev_num) }}">← Vorige</a>
+    {% endif %}
+    <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+      <a href="{{ url_for('main.opinie_list', page=pagination.next_num) }}">Volgende →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+{% else %}
+  <p>Nog geen gepubliceerde opinies. <a href="{{ url_for('main.opinie_insturen') }}">Wees de eerste!</a></p>
+{% endif %}
+
+{% endblock %}

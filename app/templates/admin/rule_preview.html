@@ -1,0 +1,207 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Voorbeeld — {{ source.name }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>{{ source.name }} <small style="font-weight:normal;font-size:0.75em;color:#666">{{ rule.rule_purpose }}</small></h1>
+  <a href="{{ url_for('admin.rules') }}" class="btn btn-secondary">← Regels</a>
+</div>
+
+<div class="rule-info">
+  <p>
+    <strong>Van toepassing op:</strong>
+    <code class="url-pattern">{{ rule.url_pattern }}</code>
+    &nbsp;—&nbsp;
+    {% if rule.rule_purpose == "links" %}
+      selecteert artikellinks op de lijstpagina
+    {% elif rule.rule_purpose == "events" %}
+      selecteert evenement-containers op de agendapagina
+    {% else %}
+      extraheert tekst van gelinkte artikelpagina's
+    {% endif %}
+  </p>
+  <p><strong>Type:</strong> {{ rule.rule_type }}</p>
+  <p><strong>Definitie:</strong> <code>{{ rule.rule_definition or '(leeg)' }}</code></p>
+  <p><strong>Status:</strong>
+    {% if rule.approved %}
+      <span class="badge badge-active">Goedgekeurd</span>
+    {% else %}
+      <span class="badge badge-archived">In afwachting</span>
+    {% endif %}
+  </p>
+</div>
+
+{# ── Preview output ─────────────────────────────────────────────────────────── #}
+<div class="preview-output">
+
+  {% if rule.rule_purpose == "links" %}
+    <h2>Gevonden artikellinks</h2>
+    {% if preview_links is not none %}
+      {% if preview_links %}
+        <p>
+          <em>{{ preview_links|length }} links gevonden met deze regel</em>
+          {% if combined_links %}
+            &nbsp;·&nbsp;
+            <strong>{{ combined_links|length }} totaal</strong> samen met andere goedgekeurde linkregels
+          {% endif %}
+        </p>
+        <ul class="preview-links">
+          {% for url in preview_links[:30] %}
+            <li><a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a></li>
+          {% endfor %}
+        </ul>
+        {% if preview_links|length > 30 %}
+          <p><em>… en {{ preview_links|length - 30 }} meer</em></p>
+        {% endif %}
+      {% else %}
+        <p class="error">Geen links gevonden. Regel werkt niet of pagina kon niet worden opgehaald.</p>
+      {% endif %}
+    {% elif rule.rule_definition %}
+      <p class="error">Pagina kon niet worden opgehaald.</p>
+    {% else %}
+      <p>Nog geen regel — genereer er een hieronder.</p>
+    {% endif %}
+
+  {% elif rule.rule_purpose == "events" %}
+    <h2>Gevonden evenement-containers</h2>
+    {% if preview_events_count is not none %}
+      {% if preview_events_count > 0 %}
+        <p>✓ <strong>{{ preview_events_count }} containers</strong> gevonden die elk als één evenement worden geparsed.</p>
+      {% else %}
+        <p class="error">Geen containers gevonden met deze selector.</p>
+      {% endif %}
+    {% elif rule.rule_definition %}
+      <p class="error">Agendapagina kon niet worden opgehaald.</p>
+    {% else %}
+      <p>Nog geen regel — genereer er een hieronder.</p>
+    {% endif %}
+
+  {% else %}{# content #}
+    <h2>Geëxtraheerde tekst</h2>
+    {% if preview_text %}
+      <div class="preview-text">{{ preview_text[:2000] }}</div>
+      {% if preview_text|length > 2000 %}<p><em>… (ingekort)</em></p>{% endif %}
+    {% elif rule.rule_definition %}
+      <p class="error">Geen tekst geëxtraheerd. Regel werkt niet of artikelpagina kon niet worden opgehaald.</p>
+    {% else %}
+      <p>Nog geen regel — genereer er een hieronder.</p>
+    {% endif %}
+  {% endif %}
+
+</div>
+
+{# ── Edit form ──────────────────────────────────────────────────────────────── #}
+<div class="rule-edit-form">
+  <h3>Regel bewerken</h3>
+  <form method="post" action="{{ url_for('admin.rule_edit', rule_id=rule.id) }}">
+    <div class="form-row">
+      <label for="rule_type">Type</label>
+      <select name="rule_type" id="rule_type">
+        <option value="css_selector" {% if rule.rule_type == 'css_selector' %}selected{% endif %}>CSS selector</option>
+        <option value="regex" {% if rule.rule_type == 'regex' %}selected{% endif %}>Regex</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="rule_definition">Definitie</label>
+      <textarea name="rule_definition" id="rule_definition" rows="3" style="width:100%;font-family:monospace">{{ rule.rule_definition or '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-active">Opslaan</button>
+  </form>
+</div>
+
+{# ── Actions ────────────────────────────────────────────────────────────────── #}
+<div class="rule-actions">
+
+  {% if not rule.approved %}
+    {# Approve #}
+    {% if rule.rule_definition %}
+    <form method="post" action="{{ url_for('admin.rule_approve', rule_id=rule.id) }}" style="display:inline">
+      <input type="hidden" name="scope" value="persistent">
+      <button type="submit" class="btn btn-active">✓ Goedkeuren</button>
+    </form>
+    {% endif %}
+
+    {# Generate buttons (AI + Heuristic) — share sample_url via JS or separate forms #}
+    {% if rule.rule_purpose == "content" %}
+      <div style="display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+        <input type="text" id="sample-url-input" name="sample_url"
+               placeholder="Artikel-URL als voorbeeld (aanbevolen)"
+               style="width:22em"
+               title="Plak een echte artikelpagina van deze bron">
+        <form method="post" action="{{ url_for('admin.rule_generate', rule_id=rule.id) }}"
+              style="display:inline" onsubmit="copySampleUrl(this)">
+          <button type="submit" class="btn">
+            {{ 'AI opnieuw genereren' if rule.rule_definition else 'AI genereren' }}
+          </button>
+        </form>
+        <form method="post" action="{{ url_for('admin.rule_suggest_heuristic', rule_id=rule.id) }}"
+              style="display:inline" onsubmit="copySampleUrl(this)">
+          <button type="submit" class="btn btn-secondary">⚙ Heuristisch</button>
+        </form>
+      </div>
+      <script>
+        function copySampleUrl(form) {
+          var val = document.getElementById('sample-url-input').value;
+          var inp = document.createElement('input');
+          inp.type = 'hidden'; inp.name = 'sample_url'; inp.value = val;
+          form.appendChild(inp);
+        }
+      </script>
+    {% else %}
+      <form method="post" action="{{ url_for('admin.rule_generate', rule_id=rule.id) }}" style="display:inline">
+        <button type="submit" class="btn">
+          {{ 'AI opnieuw genereren' if rule.rule_definition else 'AI genereren' }}
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('admin.rule_suggest_heuristic', rule_id=rule.id) }}" style="display:inline">
+        <button type="submit" class="btn btn-secondary">⚙ Heuristisch</button>
+      </form>
+    {% endif %}
+
+  {% else %}
+    {# Approved — regenerate creates a NEW pending rule #}
+    {% if rule.rule_purpose == "content" %}
+      <div style="display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+        <input type="text" id="sample-url-input" placeholder="Artikel-URL als voorbeeld" style="width:22em">
+        <form method="post" action="{{ url_for('admin.rule_generate_new', source_id=source.id, purpose=rule.rule_purpose) }}"
+              style="display:inline" onsubmit="copySampleUrl(this)">
+          <button type="submit" class="btn">+ Nieuwe variant (AI)</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.rule_suggest_heuristic_new', source_id=source.id, purpose=rule.rule_purpose) }}"
+              style="display:inline" onsubmit="copySampleUrl(this)">
+          <button type="submit" class="btn btn-secondary">+ Nieuwe variant (⚙)</button>
+        </form>
+      </div>
+      <script>
+        function copySampleUrl(form) {
+          var val = document.getElementById('sample-url-input').value;
+          var inp = document.createElement('input');
+          inp.type = 'hidden'; inp.name = 'sample_url'; inp.value = val;
+          form.appendChild(inp);
+        }
+      </script>
+    {% else %}
+      <form method="post" action="{{ url_for('admin.rule_generate_new', source_id=source.id, purpose=rule.rule_purpose) }}" style="display:inline">
+        <button type="submit" class="btn">+ Nieuwe variant (AI)</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.rule_suggest_heuristic_new', source_id=source.id, purpose=rule.rule_purpose) }}" style="display:inline">
+        <button type="submit" class="btn btn-secondary">+ Nieuwe variant (⚙)</button>
+      </form>
+    {% endif %}
+  {% endif %}
+
+  {% if rule.rule_purpose == "links" %}
+    <form method="post" action="{{ url_for('admin.source_add_rule', source_id=source.id, purpose='links') }}" style="display:inline">
+      <button type="submit" class="btn btn-secondary">+ Extra linkregel (leeg)</button>
+    </form>
+  {% endif %}
+
+  {# Delete #}
+  <form method="post" action="{{ url_for('admin.rule_delete', rule_id=rule.id) }}" style="display:inline"
+        onsubmit="return confirm('Regel definitief verwijderen?')">
+    <button type="submit" class="btn btn-danger">Verwijder</button>
+  </form>
+
+</div>
+
+{% endblock %}

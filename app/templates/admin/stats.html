@@ -1,0 +1,88 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Statistieken{% endblock %}
+{% block content %}
+<h1>Bron­statistieken</h1>
+
+<table class="data-table stats-table">
+  <thead>
+    <tr>
+      <th>Bron</th>
+      <th>Type</th>
+      <th>Actief</th>
+      <th title="Totaal aantal opgeslagen artikelen">Totaal</th>
+      <th title="Nieuwe items bij de laatste ophaalronde">Laatste ophaal</th>
+      <th title="Tijdstip van de laatste succesvolle ophaalronde">Laatst opgehaald</th>
+      <th title="Datum van het oudste artikel">Eerste artikel</th>
+      <th title="Datum van het recentste artikel">Laatste artikel</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    {% set s = r.source %}
+    <tr class="{% if r.failures > 0 %}row-error{% endif %}">
+      <td>
+        <a href="{{ url_for('admin.source_edit', source_id=s.id) }}">{{ s.name }}</a>
+        {% if r.failures > 0 %}
+          <span class="badge badge-error" title="{{ r.failures }} opeenvolgende fouten">{{ r.failures }}✕</span>
+        {% endif %}
+        {% if s.filter_local %}
+          <span class="badge badge-archived" title="Lokaalfilter actief">filter</span>
+        {% endif %}
+      </td>
+      <td><span class="source-type-badge type-{{ s.type }}">{{ s.type }}</span></td>
+      <td>
+        <span class="badge {% if s.active %}badge-active{% else %}badge-archived{% endif %}">
+          {{ 'ja' if s.active else 'nee' }}
+        </span>
+      </td>
+      <td class="num">{{ r.total }}</td>
+      <td class="num">
+        {% if r.last_new is not none %}
+          <span class="{% if r.last_new == 0 %}muted{% endif %}">
+            {{ '+' + r.last_new|string if r.last_new > 0 else '0' }}
+          </span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if r.last_fetch %}
+          <time title="{{ r.last_fetch.strftime('%Y-%m-%d %H:%M UTC') }}">
+            {{ r.last_fetch.strftime('%-d %b %H:%M') }}
+          </time>
+        {% else %}
+          <span class="muted">nooit</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if r.first_seen %}
+          <time>{{ r.first_seen.strftime('%-d %b %Y') }}</time>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if r.last_seen %}
+          <time>{{ r.last_seen.strftime('%-d %b %Y') }}</time>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </td>
+      <td class="actions">
+        <a href="{{ url_for('admin.source_edit', source_id=s.id) }}" class="btn btn-small">Config</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Geen bronnen gevonden.</td></tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3"><strong>Totaal</strong></td>
+      <td class="num"><strong>{{ rows | sum(attribute='total') }}</strong></td>
+      <td colspan="5"></td>
+    </tr>
+  </tfoot>
+</table>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Agenda{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Agenda</h1>
+  <div class="topic-filter">
+    <a href="{{ url_for('main.events') }}" {% if not active_topic %}class="active"{% endif %}>Alle</a>
+    {% for topic in topics %}
+      <a href="{{ url_for('main.events', topic=topic.id) }}"
+         {% if active_topic and active_topic.id == topic.id %}class="active"{% endif %}>
+        {{ topic.name }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="event-list">
+  {% for event in pagination.items %}
+    <div class="event-card">
+      <div class="event-date">
+        <span class="day">{{ event.start_time.strftime('%d') }}</span>
+        <span class="month">{{ event.start_time.strftime('%b') }}</span>
+      </div>
+      <div class="event-info">
+        <h2><a href="{{ url_for('main.event_detail', event_id=event.id) }}">{{ event.title }}</a></h2>
+        <div class="event-meta">
+          {% if event.location %}<span>📍 {{ event.location }}</span>{% endif %}
+          <time>{{ event.start_time.strftime('%d %B %Y, %H:%M') }}</time>
+          {% if event.organizer %}<span>{{ event.organizer }}</span>{% endif %}
+        </div>
+        {% if event.topics %}
+          <div class="event-topics">
+            {% for topic in event.topics %}
+              <span class="tag">{{ topic.name }}</span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p>Geen aankomende evenementen.</p>
+  {% endfor %}
+</div>
+
+{% if pagination.pages > 1 %}
+  <nav class="pagination">
+    {% if pagination.has_prev %}<a href="{{ url_for('main.events', page=pagination.prev_num) }}">← Vorige</a>{% endif %}
+    <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a href="{{ url_for('main.events', page=pagination.next_num) }}">Volgende →</a>{% endif %}
+  </nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# Flask / app
+instance/
+.env
+*.db
+
+# Data (per-town, never committed)
+data/
+
+# Towns config (contains passwords)
+towns.json
+
+# Migrations (committed, but not the db)
+# migrations/ is committed
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

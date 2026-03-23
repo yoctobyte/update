@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block content %}
+<div class="event-detail">
+  <h1>{{ event.title }}</h1>
+
+  <div class="event-meta-block">
+    <p><strong>Datum:</strong> <time>{{ event.start_time.strftime('%d %B %Y, %H:%M') }}</time>
+      {% if event.end_time %} – {{ event.end_time.strftime('%H:%M') }}{% endif %}
+    </p>
+    {% if event.location %}<p><strong>Locatie:</strong> {{ event.location }}</p>{% endif %}
+    {% if event.organizer %}<p><strong>Organisator:</strong> {{ event.organizer }}</p>{% endif %}
+    {% if event.contact_info %}<p><strong>Contact:</strong> {{ event.contact_info }}</p>{% endif %}
+    {% if event.source_url %}<p><a href="{{ event.source_url }}" target="_blank" rel="noopener">Meer informatie →</a></p>{% endif %}
+  </div>
+
+  {% if event.description %}
+    <div class="event-description">
+      <p>{{ event.description }}</p>
+    </div>
+  {% endif %}
+
+  {% if event.topics %}
+    <div class="event-topics">
+      {% for topic in event.topics %}
+        <a href="{{ url_for('main.events', topic=topic.id) }}" class="tag">{{ topic.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if event.articles %}
+    <div class="related-articles">
+      <h2>Gerelateerde artikelen</h2>
+      {% for article in event.articles %}
+        <div><a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a></div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

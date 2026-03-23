@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Regio{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Regio</h1>
+  {% if region_towns %}
+    <p class="page-subtitle">Nieuws uit de regio: {{ region_towns | join(', ') }}</p>
+  {% endif %}
+  <div class="topic-filter">
+    <a href="{{ url_for('main.regio') }}" {% if not active_topic %}class="active"{% endif %}>Alle</a>
+    {% for topic in topics %}
+      <a href="{{ url_for('main.regio', topic=topic.id) }}"
+         {% if active_topic and active_topic.id == topic.id %}class="active"{% endif %}>
+        {{ topic.name }}
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="article-list">
+  {% for article in pagination.items %}
+    <article class="article-card">
+      <h2 class="article-title">
+        <a href="{{ url_for('main.article_detail', article_id=article.id) }}">{{ article.title }}</a>
+      </h2>
+
+      {% set desc = article.summary or article.short_text %}
+      {% if desc %}
+        <a href="{{ url_for('main.article_detail', article_id=article.id) }}" class="article-snippet-link">
+          <p class="article-snippet">{{ desc }}</p>
+        </a>
+      {% endif %}
+
+      {% if article.topics %}
+        <div class="article-topics">
+          {% for topic in article.topics %}
+            <a href="{{ url_for('main.regio', topic=topic.id) }}" class="tag">{{ topic.name }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="article-footer">
+        <div class="article-sources">
+          <a href="{{ article.url }}" target="_blank" rel="noopener"
+             title="{{ article.source.name }}" class="source-favicon-link">
+            <img src="https://www.google.com/s2/favicons?domain={{ article.source.base_url }}&sz=32"
+                 class="source-favicon" alt="{{ article.source.name }}"
+                 width="16" height="16" loading="lazy">
+          </a>
+          <time class="article-date">
+            {%- if article.published_at -%}
+              {{ article.published_at.strftime('%-d %b %H:%M') }}
+            {%- elif article.created_at -%}
+              {{ article.created_at.strftime('%-d %b %H:%M') }}
+            {%- endif -%}
+          </time>
+        </div>
+        <a href="{{ article.url }}" target="_blank" rel="noopener"
+           class="ext-indicator" title="Lees op {{ article.source.name }}">↗</a>
+      </div>
+    </article>
+  {% else %}
+    <p>Nog geen regio-artikelen gevonden. Stel een bron in met geofilter "regio" om te beginnen.</p>
+  {% endfor %}
+</div>
+
+{% if pagination.pages > 1 %}
+  <nav class="pagination">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('main.regio', page=pagination.prev_num, topic=active_topic.id if active_topic else '') }}">← Vorige</a>
+    {% endif %}
+    <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+      <a href="{{ url_for('main.regio', page=pagination.next_num, topic=active_topic.id if active_topic else '') }}">Volgende →</a>
+    {% endif %}
+  </nav>
+{% endif %}
+{% endblock %}

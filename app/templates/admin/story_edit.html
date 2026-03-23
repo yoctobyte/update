@@ -1,0 +1,68 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Verhaal bewerken{% endblock %}
+{% block content %}
+<h1>Verhaal bewerken</h1>
+
+<form method="post" class="form">
+  <div class="field">
+    <label for="title">Titel</label>
+    <input type="text" id="title" name="title" value="{{ story.title }}" required>
+  </div>
+  <div class="field">
+    <label for="description">Samenvatting</label>
+    <textarea id="description" name="description" rows="5">{{ story.description or '' }}</textarea>
+    <div class="field-actions">
+      <form method="post" action="{{ url_for('admin.story_summarize', story_id=story.id) }}" style="display:inline">
+        <button type="submit" class="btn btn-small">AI-samenvatting genereren</button>
+      </form>
+    </div>
+  </div>
+  <div class="field">
+    <label for="further_reading">Verder lezen</label>
+    <textarea id="further_reading" name="further_reading" rows="3">{{ story.further_reading or '' }}</textarea>
+  </div>
+  <div class="field">
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      <option value="suggested" {% if story.status == 'suggested' %}selected{% endif %}>Voorgesteld (niet publiek)</option>
+      <option value="active" {% if story.status == 'active' %}selected{% endif %}>Actief</option>
+      <option value="archived" {% if story.status == 'archived' %}selected{% endif %}>Gearchiveerd</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Onderwerpen</label>
+    <div class="checkbox-group">
+      {% for topic in topics %}
+        <label>
+          <input type="checkbox" name="topic_ids" value="{{ topic.id }}"
+            {% if topic in story.topics %}checked{% endif %}>
+          {{ topic.name }}
+        </label>
+      {% endfor %}
+    </div>
+  </div>
+  <button type="submit" class="btn">Opslaan</button>
+  <a href="{{ url_for('admin.stories') }}" class="btn btn-secondary">Terug</a>
+</form>
+
+<div class="story-articles-section">
+  <h2>Artikelen ({{ story.articles | length }})</h2>
+  <table class="data-table">
+    <thead><tr><th>Artikel</th><th>Bron</th><th>Datum</th><th></th></tr></thead>
+    <tbody>
+      {% for article in story.articles | sort(attribute='published_at', reverse=True) %}
+        <tr>
+          <td><a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title[:70] }}</a></td>
+          <td>{{ article.source.name }}</td>
+          <td>{{ article.published_at.strftime('%d %b %Y') if article.published_at else '—' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.story_untie', story_id=story.id, article_id=article.id) }}">
+              <button type="submit" class="btn btn-small btn-danger">Ontkoppel</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

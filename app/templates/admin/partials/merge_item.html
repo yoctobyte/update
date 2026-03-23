@@ -1,0 +1,30 @@
+<tr id="merge-{{ log.id }}">
+  <td>
+    <a href="{{ log.article.url }}" target="_blank" rel="noopener">{{ log.article.title[:60] }}{% if log.article.title|length > 60 %}…{% endif %}</a>
+    <br><small>{{ log.article.source.name }}</small>
+  </td>
+  <td>
+    <a href="{{ url_for('admin.story_edit', story_id=log.story.id) }}">{{ log.story.title[:60] }}{% if log.story.title|length > 60 %}…{% endif %}</a>
+  </td>
+  <td>
+    <span class="score {% if log.similarity_score >= 0.85 %}score-high{% elif log.similarity_score >= 0.65 %}score-mid{% else %}score-low{% endif %}">
+      {{ '%.2f'|format(log.similarity_score) }}
+    </span>
+  </td>
+  <td class="actions">
+    {% if log.outcome == 'pending' %}
+      <button
+        hx-post="{{ url_for('admin.merge_accept', log_id=log.id) }}"
+        hx-target="#merge-{{ log.id }}"
+        hx-swap="outerHTML"
+        class="btn btn-small btn-active">Samenvoegen</button>
+      <button
+        hx-post="{{ url_for('admin.merge_reject', log_id=log.id) }}"
+        hx-target="#merge-{{ log.id }}"
+        hx-swap="outerHTML"
+        class="btn btn-small btn-danger">Weigeren</button>
+    {% else %}
+      <span class="outcome outcome-{{ log.outcome }}">{{ log.outcome }}</span>
+    {% endif %}
+  </td>
+</tr>

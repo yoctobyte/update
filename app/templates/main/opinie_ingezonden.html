@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Stuk ingezonden{% endblock %}
+{% block content %}
+
+<article class="prose-page">
+  <h1>Uw stuk is ingezonden ✓</h1>
+
+  <p>
+    Bedankt, <strong>{{ opinion.pen_name }}</strong>. Uw opiniestuk
+    <em>"{{ opinion.title }}"</em> is ontvangen en wacht op redactionele beoordeling.
+  </p>
+
+  <div class="edit-link-box">
+    <h2>Uw persoonlijke bewerkingslink</h2>
+    <p>
+      Sla deze link op. Zolang uw stuk nog niet gepubliceerd of afgewezen is,
+      kunt u via deze link uw tekst aanpassen:
+    </p>
+    <div class="edit-link-url">
+      <a href="{{ edit_url }}">{{ edit_url }}</a>
+    </div>
+    <p class="edit-link-note">
+      Deze link is alleen voor u. Deel hem niet als u wilt dat uw stuk ongewijzigd blijft.
+    </p>
+  </div>
+
+  <p><a href="{{ url_for('main.opinie_list') }}">← Terug naar alle opinies</a></p>
+</article>
+
+{% endblock %}

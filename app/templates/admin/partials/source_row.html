@@ -1,0 +1,30 @@
+<tr id="source-row-{{ source.id }}">
+  <td>
+    <a href="{{ source.base_url }}" target="_blank" rel="noopener">{{ source.name }}</a>
+    {% if source.consecutive_failures > 0 %}
+      <span class="badge badge-error">{{ source.consecutive_failures }} fouten</span>
+    {% endif %}
+  </td>
+  <td>{{ source.type }}</td>
+  <td>
+    <button
+      hx-post="{{ url_for('admin.source_toggle', source_id=source.id) }}"
+      hx-target="#source-row-{{ source.id }}"
+      hx-swap="outerHTML"
+      class="btn btn-small {% if source.active %}btn-active{% else %}btn-inactive{% endif %}">
+      {{ 'Actief' if source.active else 'Inactief' }}
+    </button>
+  </td>
+  <td>{{ article_counts[source.id] }}</td>
+  <td>{{ source.last_successful_fetch.strftime('%d %b %H:%M') if source.last_successful_fetch else '—' }}</td>
+  <td class="actions">
+    <form style="display:inline" method="post" action="{{ url_for('admin.source_fetch_now', source_id=source.id) }}">
+      <button type="submit" class="btn btn-small">Ophalen nu</button>
+    </form>
+    <a href="{{ url_for('admin.source_edit', source_id=source.id) }}" class="btn btn-small">Configureer</a>
+    <form style="display:inline" method="post" action="{{ url_for('admin.source_delete', source_id=source.id) }}"
+          onsubmit="return confirm('Bron verwijderen?')">
+      <button type="submit" class="btn btn-small btn-danger">Verwijder</button>
+    </form>
+  </td>
+</tr>

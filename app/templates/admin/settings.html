@@ -1,0 +1,54 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Instellingen{% endblock %}
+{% block content %}
+<h1>Site-instellingen</h1>
+
+<form method="post" class="form">
+  <section class="settings-section">
+    <h2>Regio</h2>
+    <p class="help-text">
+      Plaatsen in de regio die als <em>regio-nieuws</em> worden herkend.
+      Artikelen over deze plaatsen zijn zichtbaar op de <strong>Regio</strong>-pagina.
+      Één plaatsnaam per regel.
+    </p>
+    <div class="field">
+      <label for="region_towns">Nabijgelegen plaatsen (regio)</label>
+      <textarea id="region_towns" name="region_towns" rows="10"
+                placeholder="Ede&#10;Rhenen&#10;Veenendaal">{{ region_towns_text }}</textarea>
+    </div>
+  </section>
+
+  <section class="settings-section">
+    <h2>Provincie</h2>
+    <p class="help-text">
+      Provincienaam en plaatsen die als <em>provincienieuws</em> worden herkend.
+      Artikelen over deze plaatsen zijn zichtbaar op de <strong>Provincie</strong>-pagina.
+    </p>
+    <div class="field">
+      <label for="province">Provincienaam</label>
+      <input type="text" id="province" name="province"
+             value="{{ cfg.get('province', '') }}"
+             placeholder="bijv. Gelderland">
+    </div>
+    <div class="field">
+      <label for="province_towns">Plaatsen in de provincie (één per regel)</label>
+      <textarea id="province_towns" name="province_towns" rows="10"
+                placeholder="Arnhem&#10;Nijmegen&#10;Apeldoorn">{{ province_towns_text }}</textarea>
+    </div>
+  </section>
+
+  <button type="submit" class="btn">Opslaan</button>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">Annuleren</a>
+</form>
+
+<section class="settings-section">
+  <h2>Overige instellingen</h2>
+  <table class="data-table">
+    <tr><th>Sitenaam</th><td>{{ cfg.get('site_name', '—') }}</td></tr>
+    <tr><th>Plaatsnaam</th><td>{{ cfg.get('site_town', '—') }}</td></tr>
+    <tr><th>Contactnaam</th><td>{{ cfg.get('contact', {}).get('name', '—') }}</td></tr>
+    <tr><th>Contactmail</th><td>{{ cfg.get('contact', {}).get('email', '—') }}</td></tr>
+  </table>
+  <p class="help-text">Overige instellingen bewerk je direct in <code>config.json</code>.</p>
+</section>
+{% endblock %}

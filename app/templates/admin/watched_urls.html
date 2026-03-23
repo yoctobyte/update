@@ -1,0 +1,68 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Volgen{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>URL's volgen</h1>
+  <form method="post" action="{{ url_for('admin.watched_urls_fetch_all') }}" style="display:inline">
+    <button class="btn btn-secondary">↓ Alles ophalen</button>
+  </form>
+</div>
+
+<p class="help-text">
+  Voeg RSS-feeds of webpagina's toe om periodiek snapshots van op te slaan.
+  Geen parsing, geen regels — alleen archiveren voor later gebruik.
+  Snapshots worden elk uur automatisch bijgewerkt.
+</p>
+
+<form method="post" action="{{ url_for('admin.watched_url_new') }}" class="inline-form">
+  <input type="url" name="url" placeholder="https://..." required style="width:340px">
+  <input type="text" name="label" placeholder="Omschrijving (optioneel)" style="width:180px">
+  <label style="margin:0 0.5rem"><input type="checkbox" name="render_js"> JS</label>
+  <button class="btn">+ Toevoegen</button>
+</form>
+
+{% if entries %}
+<table class="data-table" style="margin-top:1.5rem">
+  <thead>
+    <tr>
+      <th>Label / URL</th>
+      <th>Type</th>
+      <th>Interval</th>
+      <th>Snapshots</th>
+      <th>Laatste ophaling</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in entries %}
+    <tr>
+      <td>
+        {% if entry.label %}<strong>{{ entry.label }}</strong><br>{% endif %}
+        <a href="{{ entry.url }}" target="_blank" rel="noopener" class="url-truncate">{{ entry.url }}</a>
+      </td>
+      <td>
+        {% if entry.is_rss %}RSS{% elif entry.render_js %}JS{% else %}HTML{% endif %}
+      </td>
+      <td>{{ entry.fetch_interval_hours }}u</td>
+      <td>{{ counts[entry.id] }}</td>
+      <td>{{ entry.last_fetched_at.strftime("%d-%m-%Y %H:%M") if entry.last_fetched_at else "—" }}</td>
+      <td class="actions">
+        <form method="post" action="{{ url_for('admin.watched_url_fetch', entry_id=entry.id) }}" style="display:inline">
+          <button class="btn btn-sm">↓</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.watched_url_toggle', entry_id=entry.id) }}" style="display:inline">
+          <button class="btn btn-sm btn-secondary">{{ "Pauzeer" if entry.active else "Hervat" }}</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.watched_url_delete', entry_id=entry.id) }}" style="display:inline"
+              onsubmit="return confirm('URL verwijderen?')">
+          <button class="btn btn-sm btn-danger">✕</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p style="margin-top:1.5rem; color:#888">Nog geen URL's toegevoegd.</p>
+{% endif %}
+{% endblock %}

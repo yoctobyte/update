@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ story.title }}{% endblock %}
+{% block content %}
+<div class="story-detail">
+  <h1>{{ story.title }}</h1>
+
+  {% if story.topics %}
+    <div class="story-topics">
+      {% for topic in story.topics %}
+        <a href="{{ url_for('main.index', topic=topic.id) }}" class="tag">{{ topic.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if story.description %}
+    <div class="story-summary">
+      <h2>Samenvatting</h2>
+      <p>{{ story.description }}</p>
+    </div>
+  {% endif %}
+
+  <div class="story-articles">
+    <h2>Artikelen</h2>
+    {% for article in articles %}
+      <article class="article-card">
+        <div class="article-meta">
+          <span class="source">{{ article.source.name }}</span>
+          {% if article.published_at %}
+            <time>{{ article.published_at.strftime('%d %b %Y') }}</time>
+          {% endif %}
+        </div>
+        <h3><a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a></h3>
+        {% if article.short_text %}
+          <p class="article-snippet">{{ article.short_text }}</p>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+
+  {% if story.further_reading %}
+    <div class="further-reading">
+      <h2>Verder lezen</h2>
+      <p>{{ story.further_reading }}</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

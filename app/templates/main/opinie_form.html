@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Opiniestuk insturen{% endblock %}
+{% block content %}
+
+<article class="prose-page">
+  <h1>Opiniestuk insturen</h1>
+
+  <p>
+    Schrijf uw stuk hieronder. U kunt een schuilnaam gebruiken — uw echte naam hoeft nergens te staan.
+    Na inzending ontvangt u een <strong>persoonlijke bewerkingslink</strong> waarmee u uw tekst
+    kunt aanpassen zolang het stuk nog niet gepubliceerd is.
+    Publicatie volgt na een korte redactionele check.
+  </p>
+
+  {% if errors %}
+    <div class="flash flash-error">
+      {% for e in errors %}<div>{{ e }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form class="opinion-form" method="post">
+
+    <div class="field">
+      <label for="pen_name">Schuilnaam / naam <span aria-hidden="true">*</span></label>
+      <input type="text" id="pen_name" name="pen_name" required
+             maxlength="100" value="{{ pen_name }}"
+             placeholder="bijv. Een bezorgde Wageningse of uw eigen naam">
+    </div>
+
+    <div class="field">
+      <label for="title">Titel <span aria-hidden="true">*</span></label>
+      <input type="text" id="title" name="title" required
+             maxlength="300" value="{{ title }}"
+             placeholder="Een pakkende, heldere titel">
+    </div>
+
+    <div class="field">
+      <label for="body">Tekst <span aria-hidden="true">*</span></label>
+      <textarea id="body" name="body" rows="16" required
+                placeholder="Minimaal 100 tekens. Elke alinea wordt een nieuwe regel.">{{ body }}</textarea>
+      <small class="field-hint">Druk twee keer op Enter voor een nieuwe alinea.</small>
+    </div>
+
+    <div class="field">
+      <label for="email">E-mailadres <small>(optioneel — alleen zichtbaar voor de redactie)</small></label>
+      <input type="email" id="email" name="email" value="{{ email or '' }}"
+             placeholder="Voor eventuele vragen of publicatiemelding">
+    </div>
+
+    <div class="field-actions">
+      <button type="submit" class="btn">Insturen</button>
+      <a href="{{ url_for('main.opinie_list') }}" class="btn btn-secondary">Annuleer</a>
+    </div>
+
+  </form>
+</article>
+
+{% endblock %}

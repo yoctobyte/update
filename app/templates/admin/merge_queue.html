@@ -1,0 +1,31 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Samenvoeg-suggesties{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Samenvoeg-suggesties</h1>
+  <a href="{{ url_for('admin.merge_log') }}" class="btn btn-secondary">Volledig log</a>
+</div>
+
+{% if pagination.items %}
+  <table class="data-table">
+    <thead>
+      <tr><th>Artikel</th><th>Verhaal</th><th>Score</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for log in pagination.items %}
+        {% include "admin/partials/merge_item.html" %}
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if pagination.pages > 1 %}
+    <nav class="pagination">
+      {% if pagination.has_prev %}<a href="{{ url_for('admin.merge_queue', page=pagination.prev_num) }}">← Vorige</a>{% endif %}
+      <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+      {% if pagination.has_next %}<a href="{{ url_for('admin.merge_queue', page=pagination.next_num) }}">Volgende →</a>{% endif %}
+    </nav>
+  {% endif %}
+{% else %}
+  <p>Geen openstaande suggesties.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Evenement bewerken' if event else 'Nieuw evenement' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Evenement bewerken' if event else 'Nieuw evenement toevoegen' }}</h1>
+
+<form method="post" class="form">
+  <div class="field">
+    <label for="title">Titel</label>
+    <input type="text" id="title" name="title" value="{{ event.title if event else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="description">Omschrijving</label>
+    <textarea id="description" name="description" rows="4">{{ event.description if event else '' }}</textarea>
+  </div>
+  <div class="field">
+    <label for="location">Locatie</label>
+    <input type="text" id="location" name="location" value="{{ event.location if event else '' }}">
+  </div>
+  <div class="field">
+    <label for="start_time">Begintijd</label>
+    <input type="datetime-local" id="start_time" name="start_time"
+           value="{{ event.start_time.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required>
+  </div>
+  <div class="field">
+    <label for="end_time">Eindtijd (optioneel)</label>
+    <input type="datetime-local" id="end_time" name="end_time"
+           value="{{ event.end_time.strftime('%Y-%m-%dT%H:%M') if event and event.end_time else '' }}">
+  </div>
+  <div class="field">
+    <label for="organizer">Organisator</label>
+    <input type="text" id="organizer" name="organizer" value="{{ event.organizer if event else '' }}">
+  </div>
+  <div class="field">
+    <label for="contact_info">Contactinformatie</label>
+    <input type="text" id="contact_info" name="contact_info" value="{{ event.contact_info if event else '' }}">
+  </div>
+  <div class="field">
+    <label for="source_url">Bron-URL (optioneel)</label>
+    <input type="url" id="source_url" name="source_url" value="{{ event.source_url if event else '' }}">
+  </div>
+  <div class="field">
+    <label>Onderwerpen</label>
+    <div class="checkbox-group">
+      {% for topic in topics %}
+        <label>
+          <input type="checkbox" name="topic_ids" value="{{ topic.id }}"
+            {% if event and topic in event.topics %}checked{% endif %}>
+          {{ topic.name }}
+        </label>
+      {% endfor %}
+    </div>
+  </div>
+  <button type="submit" class="btn">Opslaan</button>
+  <a href="{{ url_for('admin.events') }}" class="btn btn-secondary">Annuleren</a>
+</form>
+{% endblock %}

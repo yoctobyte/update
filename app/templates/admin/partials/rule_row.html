@@ -1,0 +1,42 @@
+<tr id="rule-row-{{ rule.id }}">
+  <td>{{ rule.source.name }}</td>
+  <td>
+    <code class="url-pattern">{{ rule.url_pattern }}</code><br>
+    <small style="color:#888">{{ rule.rule_purpose }}</small>
+  </td>
+  <td>{{ rule.rule_type }}</td>
+  <td>
+    <code>
+      {% if rule.rule_definition %}
+        {{ rule.rule_definition[:80] }}{% if rule.rule_definition|length > 80 %}…{% endif %}
+      {% else %}
+        <em>nog niet gegenereerd</em>
+      {% endif %}
+    </code>
+  </td>
+  <td class="actions">
+    {# Always go to preview first — sample URL can be entered there for content rules #}
+    <a href="{{ url_for('admin.rule_preview', rule_id=rule.id) }}" class="btn btn-small">
+      {% if rule.rule_definition %}Voorbeeld{% else %}Configureer{% endif %}
+    </a>
+
+    {% if rule.rule_definition %}
+      {# Approve via HTMX — returns empty to remove this row from the pending list #}
+      <button
+        hx-post="{{ url_for('admin.rule_approve', rule_id=rule.id) }}"
+        hx-vals='{"scope": "persistent"}'
+        hx-target="#rule-row-{{ rule.id }}"
+        hx-swap="outerHTML"
+        hx-confirm="Regel goedkeuren?"
+        class="btn btn-small btn-active">Goedkeuren</button>
+    {% endif %}
+
+    {# Delete — always available #}
+    <button
+      hx-post="{{ url_for('admin.rule_delete', rule_id=rule.id) }}"
+      hx-target="#rule-row-{{ rule.id }}"
+      hx-swap="outerHTML"
+      hx-confirm="Regel verwijderen?"
+      class="btn btn-small btn-danger">Verwijder</button>
+  </td>
+</tr>

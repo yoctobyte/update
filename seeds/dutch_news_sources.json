@@ -1,0 +1,19 @@
+{
+  "sources": [
+    {
+      "name": "Gemeente (voorbeeld)",
+      "base_url": "https://www.gemeentevoorbeeld.nl/nieuws",
+      "type": "link_page",
+      "active": false,
+      "extraction_rules": [
+        {
+          "rule_type": "css_selector",
+          "rule_definition": "article.news-item__body",
+          "scope": "persistent",
+          "rule_purpose": "content",
+          "approved": false
+        }
+      ]
+    }
+  ]
+}

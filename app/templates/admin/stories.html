@@ -1,0 +1,24 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Verhalen{% endblock %}
+{% block content %}
+<h1>Verhalen</h1>
+
+<table class="data-table">
+  <thead>
+    <tr><th>Titel</th><th>Status</th><th>Artikelen</th><th>Bijgewerkt</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for story in stories %}
+      <tr>
+        <td><a href="{{ url_for('admin.story_edit', story_id=story.id) }}">{{ story.title }}</a></td>
+        <td><span class="badge badge-{{ story.status }}">{{ story.status }}</span></td>
+        <td>{{ story.articles | length }}</td>
+        <td>{{ story.updated_at.strftime('%d %b %Y') }}</td>
+        <td><a href="{{ url_for('admin.story_edit', story_id=story.id) }}" class="btn btn-small">Bewerk</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Geen verhalen.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

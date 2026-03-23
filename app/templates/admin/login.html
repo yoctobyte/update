@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Inloggen — Beheer</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="admin login-page">
+  <div class="login-form">
+    <h1>Beheer</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    <form method="post">
+      <label for="password">Wachtwoord</label>
+      <input type="password" name="password" id="password" autofocus required>
+      <button type="submit">Inloggen</button>
+    </form>
+  </div>
+</body>
+</html>

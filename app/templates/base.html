@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="light" data-font="m">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {# site.js runs synchronously to apply stored theme/font before first paint #}
+  <script src="{{ url_for('static', filename='js/site.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
+</head>
+<body>
+
+  {# ── Top section: util bar + site header, with title superimposed ──────────── #}
+  <div class="top-section">
+
+  <div class="site-title-overlay" aria-hidden="true">
+    <span class="overlay-title">{{ site_name }}</span>
+    <span class="overlay-subtitle">de saaiste krant van Nederland</span>
+  </div>
+
+  {# ── Utility bar ──────────────────────────────────────────────────────────── #}
+  <div class="util-bar" role="toolbar" aria-label="Weergave-instellingen">
+
+    <div class="util-group">
+      <button class="util-btn" id="tts-btn"
+              title="Lees voor" aria-pressed="false">🔊 Lees voor</button>
+    </div>
+
+    <div class="util-group">
+      <span class="util-label">Tekst</span>
+      <button class="util-btn font-btn font-s" data-font="s"
+              title="Kleine letters" aria-pressed="false">A</button>
+      <button class="util-btn font-btn font-m" data-font="m"
+              title="Normale letters" aria-pressed="true">A</button>
+      <button class="util-btn font-btn font-l" data-font="l"
+              title="Grote letters" aria-pressed="false">A</button>
+    </div>
+
+    <div class="util-group">
+      <span class="util-label">Thema</span>
+      <button class="util-btn theme-btn theme-light" data-theme="light"
+              title="Licht" aria-pressed="true">☀</button>
+      <button class="util-btn theme-btn theme-dark"  data-theme="dark"
+              title="Donker" aria-pressed="false">☾</button>
+      <button class="util-btn theme-btn theme-green" data-theme="green"
+              title="Groen" aria-pressed="false">✦</button>
+      <button class="util-btn theme-btn theme-hippy" data-theme="hippy"
+              title="Hippie" aria-pressed="false">✿</button>
+    </div>
+
+    <div class="util-group util-admin-group">
+      <a href="{{ url_for('admin.dashboard') }}" class="util-btn util-admin"
+         title="Beheer">⚙</a>
+    </div>
+
+  </div>
+
+  {# ── Site header ──────────────────────────────────────────────────────────── #}
+  <header class="site-header">
+    <a class="site-brand" href="{{ url_for('main.index') }}" title="{{ site_name }}">
+      {# Telegraph key — side profile, Morse era #}
+      <svg class="site-logo" viewBox="0 0 60 50" fill="currentColor"
+           aria-hidden="true" focusable="false">
+        {# Base plate #}
+        <rect x="2" y="41" width="56" height="7" rx="3"/>
+        {# Left terminal post #}
+        <rect x="8"  y="34" width="4" height="7" rx="1.5"/>
+        {# Right terminal post #}
+        <rect x="48" y="34" width="4" height="7" rx="1.5"/>
+        {# Pivot / fulcrum post #}
+        <rect x="37" y="27" width="5" height="14" rx="2"/>
+        {# Lever arm #}
+        <rect x="4" y="25" width="52" height="5" rx="2.5"/>
+        {# Round knob at left end of lever #}
+        <ellipse cx="8" cy="21" rx="7" ry="6"/>
+        {# Spring coil (decorative, right of pivot) #}
+        <path d="M44 30 C49 30 49 25 44 25"
+              fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round"/>
+      </svg>
+    </a>
+
+    <nav class="site-nav" aria-label="Hoofdnavigatie">
+      <a href="{{ url_for('main.index') }}"
+         {% if request.endpoint == 'main.index' %}class="active"{% endif %}>{{ site_town }}</a>
+      <a href="{{ url_for('main.regio') }}"
+         {% if request.endpoint == 'main.regio' %}class="active"{% endif %}>Regio</a>
+      <a href="{{ url_for('main.provincie') }}"
+         {% if request.endpoint == 'main.provincie' %}class="active"{% endif %}>Provincie</a>
+      <a href="{{ url_for('main.nationaal') }}"
+         {% if request.endpoint == 'main.nationaal' %}class="active"{% endif %}>Nationaal</a>
+      <a href="{{ url_for('main.internationaal') }}"
+         {% if request.endpoint == 'main.internationaal' %}class="active"{% endif %}>Internationaal</a>
+      <a href="{{ url_for('main.stories') }}"
+         {% if request.endpoint and 'story' in request.endpoint %}class="active"{% endif %}>Verhalen</a>
+      <a href="{{ url_for('main.events') }}"
+         {% if request.endpoint and 'event' in request.endpoint %}class="active"{% endif %}>Agenda</a>
+      <a href="{{ url_for('main.opinie_list') }}"
+         {% if request.endpoint and 'opinie' in request.endpoint %}class="active"{% endif %}>Opinie</a>
+      <a href="{{ url_for('main.about') }}"
+         {% if request.endpoint == 'main.about' %}class="active"{% endif %}>Over ons</a>
+    </nav>
+  </header>
+  </div>{# /top-section #}
+
+  {# ── Page content ─────────────────────────────────────────────────────────── #}
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <p>{{ site_name }} &mdash; lokaal nieuws voor {{ site_town }}</p>
+  </footer>
+
+</body>
+</html>

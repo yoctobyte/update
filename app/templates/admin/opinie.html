@@ -1,0 +1,105 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Opinies{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Opinies</h1>
+  <a href="{{ url_for('main.opinie_insturen') }}" class="btn btn-small" target="_blank">
+    + Eigen stuk insturen
+  </a>
+</div>
+
+{# ── Pending ──────────────────────────────────────────────────────────────── #}
+{% if pending %}
+<section>
+  <h2>Wachten op beoordeling ({{ pending|length }})</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Schuilnaam</th><th>Titel</th><th>Ingezonden</th><th>E-mail</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for op in pending %}
+      <tr>
+        <td>{{ op.pen_name }}</td>
+        <td>
+          <a href="{{ url_for('main.opinie_bewerken', token=op.token) }}" target="_blank">
+            {{ op.title }}
+          </a>
+        </td>
+        <td>{{ op.created_at.strftime('%d %b %Y %H:%M') if op.created_at else '—' }}</td>
+        <td>{{ op.email or '—' }}</td>
+        <td class="actions">
+          <form method="post" action="{{ url_for('admin.opinie_approve', opinion_id=op.id) }}" style="display:inline">
+            <button class="btn btn-small btn-active">Publiceer</button>
+          </form>
+          <form method="post" action="{{ url_for('admin.opinie_reject', opinion_id=op.id) }}" style="display:inline"
+                onsubmit="return confirm('Stuk afwijzen?')">
+            <button class="btn btn-small btn-danger">Afwijzen</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+  <p class="all-good">Geen opinies in de wachtrij.</p>
+{% endif %}
+
+{# ── Published ────────────────────────────────────────────────────────────── #}
+{% if published %}
+<section>
+  <h2>Gepubliceerd</h2>
+  <table class="data-table">
+    <thead>
+      <tr><th>Schuilnaam</th><th>Titel</th><th>Gepubliceerd</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for op in published %}
+      <tr>
+        <td>{{ op.pen_name }}</td>
+        <td><a href="{{ url_for('main.opinie_detail', opinion_id=op.id) }}" target="_blank">{{ op.title }}</a></td>
+        <td>{{ op.published_at.strftime('%d %b %Y') if op.published_at else '—' }}</td>
+        <td class="actions">
+          <form method="post" action="{{ url_for('admin.opinie_reject', opinion_id=op.id) }}" style="display:inline"
+                onsubmit="return confirm('Publicatie intrekken?')">
+            <button class="btn btn-small btn-danger">Intrekken</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{# ── Contact messages ─────────────────────────────────────────────────────── #}
+{% if contact_messages %}
+<section>
+  <h2>Contactberichten ({{ contact_messages|length }} ongelezen)</h2>
+  <table class="data-table">
+    <thead><tr><th>Naam</th><th>E-mail</th><th>Bericht</th><th>Datum</th><th></th></tr></thead>
+    <tbody>
+      {% for msg in contact_messages %}
+      <tr {% if not msg.read %}class="unread-row"{% endif %}>
+        <td>{{ msg.name }}</td>
+        <td>{{ msg.email or '—' }}</td>
+        <td style="max-width:300px; white-space:pre-wrap; font-size:0.85rem;">{{ msg.message[:200] }}{% if msg.message|length > 200 %}…{% endif %}</td>
+        <td>{{ msg.created_at.strftime('%d %b %H:%M') if msg.created_at else '—' }}</td>
+        <td>
+          {% if not msg.read %}
+          <form method="post" action="{{ url_for('admin.contact_read', msg_id=msg.id) }}" style="display:inline">
+            <button class="btn btn-small">Gelezen</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <span class="stat-number">{{ article_count }}</span>
+    <span class="stat-label">Artikelen</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-number">{{ story_count }}</span>
+    <span class="stat-label">Actieve verhalen</span>
+  </div>
+  <div class="stat-card {% if pending_merges > 0 %}stat-warn{% endif %}">
+    <span class="stat-number">{{ pending_merges }}</span>
+    <span class="stat-label"><a href="{{ url_for('admin.merge_queue') }}">Samenvoeg-suggesties</a></span>
+  </div>
+  <div class="stat-card {% if pending_topics > 0 %}stat-warn{% endif %}">
+    <span class="stat-number">{{ pending_topics }}</span>
+    <span class="stat-label"><a href="{{ url_for('admin.suggested_topics') }}">Onderwerp-suggesties</a></span>
+  </div>
+</div>
+
+{% if failing_sources %}
+  <div class="warning-block">
+    <h2>⚠ Bronproblemen</h2>
+    <table>
+      <thead><tr><th>Bron</th><th>Fouten</th><th>Laatste succes</th><th></th></tr></thead>
+      <tbody>
+        {% for source in failing_sources %}
+          <tr>
+            <td>{{ source.name }}</td>
+            <td class="error-count">{{ source.consecutive_failures }}</td>
+            <td>{{ source.last_successful_fetch.strftime('%d %b %Y %H:%M') if source.last_successful_fetch else '—' }}</td>
+            <td><a href="{{ url_for('admin.sources') }}">Bekijk</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+{% if pending_rules %}
+  <div class="warning-block">
+    <h2>⚠ Extractieregels wachten op goedkeuring</h2>
+    <ul>
+      {% for rule in pending_rules %}
+        <li>
+          <a href="{{ url_for('admin.rule_preview', rule_id=rule.id) }}">
+            {{ rule.source.name }} — {{ rule.rule_type }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+{% if not failing_sources and not pending_rules and pending_merges == 0 %}
+  <p class="all-good">Alles in orde.</p>
+{% endif %}
+{% endblock %}

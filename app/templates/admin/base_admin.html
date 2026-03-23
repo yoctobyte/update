@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Beheer{% endblock %} — Lokaal Nieuws</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
+</head>
+<body class="admin">
+  <header>
+    <nav class="site-nav">
+      <a class="site-title" href="{{ url_for('admin.dashboard') }}">⚙ Beheer</a>
+      <div class="nav-links">
+        <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin.sources') }}">Bronnen</a>
+        <a href="{{ url_for('admin.stats') }}">Statistieken</a>
+        <a href="{{ url_for('admin.rules') }}">Regels</a>
+        <a href="{{ url_for('admin.merge_queue') }}">Samenvoegen</a>
+        <a href="{{ url_for('admin.stories') }}">Verhalen</a>
+        <a href="{{ url_for('admin.topics') }}">Onderwerpen</a>
+        <a href="{{ url_for('admin.events') }}">Agenda</a>
+        <a href="{{ url_for('admin.opinie') }}">Opinie</a>
+        <a href="{{ url_for('admin.watched_urls') }}">Volgen</a>
+        <a href="{{ url_for('main.index') }}">← Site</a>
+        <a href="{{ url_for('admin.settings') }}">Instellingen</a>
+        <a href="{{ url_for('admin.logout') }}">Uitloggen</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

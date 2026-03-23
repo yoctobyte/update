@@ -1,0 +1,121 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Bron configureren' if source else 'Nieuwe bron' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Bron configureren' if source else 'Nieuwe bron toevoegen' }}</h1>
+
+{% set current_type = source.type if source else 'link_page' %}
+
+<form method="post" class="form">
+  <div class="field">
+    <label for="url">URL</label>
+    <input type="text" id="url" name="url"
+           value="{{ source.base_url if source else '' }}"
+           placeholder="bijv. stadwageningen.nl"
+           required {% if not source %}autofocus oninput="syncName(this)"{% endif %}>
+    {% if not source %}<small>Protocol (https://) wordt automatisch toegevoegd.</small>{% endif %}
+  </div>
+
+  <div class="field">
+    <label for="name">Naam</label>
+    <input type="text" id="name" name="name"
+           value="{{ source.name if source else '' }}"
+           placeholder="(zelfde als URL)">
+  </div>
+
+  <div class="field">
+    <fieldset>
+      <legend>Type</legend>
+      <label class="radio">
+        <input type="radio" name="type" value="link_page"
+               {% if current_type == 'link_page' %}checked{% endif %}
+               onchange="updateDepthVisibility(this.value)"> Website (nieuws)
+      </label>
+      <label class="radio">
+        <input type="radio" name="type" value="article_page"
+               {% if current_type == 'article_page' %}checked{% endif %}
+               onchange="updateDepthVisibility(this.value)"> Artikel-pagina
+      </label>
+      <label class="radio">
+        <input type="radio" name="type" value="rss"
+               {% if current_type == 'rss' %}checked{% endif %}
+               onchange="updateDepthVisibility(this.value)"> RSS
+      </label>
+      <label class="radio">
+        <input type="radio" name="type" value="agenda"
+               {% if current_type == 'agenda' %}checked{% endif %}
+               onchange="updateDepthVisibility(this.value)"> Agenda
+      </label>
+    </fieldset>
+  </div>
+
+  <div class="field" id="trusted-local-field">
+    <fieldset>
+      <legend>Geografische classificatie</legend>
+      <label class="checkbox">
+        <input type="checkbox" name="trusted_local" value="1"
+               {% if source and source.trusted_local %}checked{% endif %}>
+        Altijd lokaal — sla LLM-classificatie over en markeer artikelen altijd als lokaal nieuws
+      </label>
+      <small>Gebruik dit voor bronnen die uitsluitend over de eigen stad berichten (bijv. gemeentewebsite).</small>
+    </fieldset>
+  </div>
+
+  <div class="field" id="render-js-field">
+    <fieldset>
+      <legend>JavaScript-rendering</legend>
+      <label class="checkbox">
+        <input type="checkbox" id="render_js" name="render_js" value="1"
+               {% if source and source.render_js %}checked{% endif %}
+               onchange="toggleConsentSelector(this.checked)">
+        Pagina renderen met Playwright (voor sites met JS-content of consent-walls)
+      </label>
+      <div id="consent-selector-wrap" style="display:none; margin-top:0.5rem">
+        <label for="cookie_accept_selector">CSS-selector voor "akkoord"-knop (optioneel)</label>
+        <input type="text" id="cookie_accept_selector" name="cookie_accept_selector"
+               value="{{ source.cookie_accept_selector if source and source.cookie_accept_selector else '' }}"
+               placeholder="bijv.  button[data-testid='accept-all']  of  #accept-cookies">
+        <small>Wordt aangeklikt vóór het ophalen van de content. Leeg laten als niet nodig.</small>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="field" id="depth-field">
+    <label for="search_depth">Zoekdiepte</label>
+    <input type="number" id="search_depth" name="search_depth"
+           value="{{ source.search_depth if source else 1 }}" min="0" max="3">
+    <small>Aantal niveaus links te volgen. 0 = alleen de opgegeven pagina.</small>
+  </div>
+
+  <button type="submit" class="btn">
+    {{ 'Opslaan' if source else 'Opslaan en naar regels' }}
+  </button>
+  <a href="{{ url_for('admin.sources') }}" class="btn btn-secondary">Terug</a>
+</form>
+
+<script>
+function syncName(urlInput) {
+  const nameField = document.getElementById('name');
+  if (!nameField._edited) nameField.value = urlInput.value;
+}
+document.getElementById('name').addEventListener('input', function() {
+  this._edited = true;
+});
+function updateDepthVisibility(typeValue) {
+  document.getElementById('depth-field').style.display =
+    (typeValue === 'link_page') ? '' : 'none';
+  // trusted_local + render_js are relevant for all types except agenda
+  const hide = (typeValue === 'agenda');
+  document.getElementById('trusted-local-field').style.display = hide ? 'none' : '';
+  document.getElementById('render-js-field').style.display     = hide ? 'none' : '';
+}
+function toggleConsentSelector(checked) {
+  document.getElementById('consent-selector-wrap').style.display = checked ? '' : 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const checked = document.querySelector('input[name="type"]:checked');
+  if (checked) updateDepthVisibility(checked.value);
+  const jsBox = document.getElementById('render_js');
+  if (jsBox) toggleConsentSelector(jsBox.checked);
+});
+</script>
+{% endblock %}

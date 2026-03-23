@@ -1,0 +1,46 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Samenvoeg-log{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Samenvoeg-log</h1>
+  <a href="{{ url_for('admin.merge_queue') }}" class="btn btn-secondary">Openstaand</a>
+</div>
+
+<table class="data-table">
+  <thead>
+    <tr><th>Datum</th><th>Artikel</th><th>Verhaal</th><th>Score</th><th>Actie</th><th>Uitkomst</th><th>Door</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for log in pagination.items %}
+      <tr>
+        <td><time>{{ log.created_at.strftime('%d %b %H:%M') }}</time></td>
+        <td><a href="{{ log.article.url }}" target="_blank" rel="noopener">{{ log.article.title[:50] }}…</a></td>
+        <td><a href="{{ url_for('admin.story_edit', story_id=log.story.id) }}">{{ log.story.title[:50] }}</a></td>
+        <td>
+          <span class="score {% if log.similarity_score >= 0.85 %}score-high{% elif log.similarity_score >= 0.65 %}score-mid{% else %}score-low{% endif %}">
+            {{ '%.2f'|format(log.similarity_score) }}
+          </span>
+        </td>
+        <td>{{ log.action }}</td>
+        <td><span class="outcome outcome-{{ log.outcome }}">{{ log.outcome }}</span></td>
+        <td>{{ log.resolved_by }}</td>
+        <td>
+          {% if log.outcome == 'merged' %}
+            <form method="post" action="{{ url_for('admin.story_untie', story_id=log.story.id, article_id=log.article.id) }}">
+              <button type="submit" class="btn btn-small btn-danger">Ontkoppel</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if pagination.pages > 1 %}
+  <nav class="pagination">
+    {% if pagination.has_prev %}<a href="{{ url_for('admin.merge_log', page=pagination.prev_num) }}">← Vorige</a>{% endif %}
+    <span>{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a href="{{ url_for('admin.merge_log', page=pagination.next_num) }}">Volgende →</a>{% endif %}
+  </nav>
+{% endif %}
+{% endblock %}

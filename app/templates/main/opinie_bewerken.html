@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Stuk bewerken{% endblock %}
+{% block content %}
+
+<article class="prose-page">
+  <h1>Stuk bewerken</h1>
+  <p class="opinie-status-note">
+    Status: <strong>wacht op beoordeling</strong> — u kunt uw tekst nog aanpassen.
+  </p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if errors %}
+    <div class="flash flash-error">
+      {% for e in errors %}<div>{{ e }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form class="opinion-form" method="post">
+
+    <div class="field">
+      <label for="pen_name">Schuilnaam / naam <span aria-hidden="true">*</span></label>
+      <input type="text" id="pen_name" name="pen_name" required
+             maxlength="100" value="{{ pen_name }}">
+    </div>
+
+    <div class="field">
+      <label for="title">Titel <span aria-hidden="true">*</span></label>
+      <input type="text" id="title" name="title" required
+             maxlength="300" value="{{ title }}">
+    </div>
+
+    <div class="field">
+      <label for="body">Tekst <span aria-hidden="true">*</span></label>
+      <textarea id="body" name="body" rows="16" required>{{ body }}</textarea>
+    </div>
+
+    <div class="field-actions">
+      <button type="submit" class="btn">Wijzigingen opslaan</button>
+      <a href="{{ url_for('main.opinie_list') }}" class="btn btn-secondary">Sluiten</a>
+    </div>
+
+  </form>
+</article>
+
+{% endblock %}
