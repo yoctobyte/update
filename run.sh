@@ -81,7 +81,7 @@ while IFS='|' read -r TOWN PORT HASH; do
     else
         echo "[$TOWN] Starting on port $PORT (gunicorn)..."
         TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD_HASH="$HASH" FLASK_DEBUG=0 \
-            gunicorn --bind "0.0.0.0:$PORT" --workers 2 --timeout 120 wsgi:app &
+            gunicorn --bind "0.0.0.0:$PORT" --workers 1 --timeout 120 wsgi:app &
     fi
     echo $! > "$PIDFILE"
     echo "[$TOWN] Running as PID $(cat $PIDFILE)"
