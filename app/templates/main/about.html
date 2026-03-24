@@ -78,6 +78,7 @@
     {% endif %}
 
     <form class="contact-form" method="post" action="{{ url_for('main.contact_submit') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="field">
         <label for="cf-name">Naam <span aria-hidden="true">*</span></label>
         <input type="text" id="cf-name" name="name" required

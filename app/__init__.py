@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
-from flask import Flask
+from flask import Flask, request
 from .config import Config
-from .extensions import db, migrate, scheduler
+from .extensions import db, migrate, csrf, limiter, scheduler
+
+_BAD_SECRETS = {"dev-secret-change-me", "change-me", "secret", "admin", "password", ""}
 
 
 def create_app(town: str = None) -> Flask:
@@ -19,15 +21,37 @@ def create_app(town: str = None) -> Flask:
     db_dir.mkdir(parents=True, exist_ok=True)
     Config.town_cache_path().mkdir(parents=True, exist_ok=True)
 
+    # Validate and load secrets
+    secret_key = Config._require_env("FLASK_SECRET_KEY", known_bad=_BAD_SECRETS)
+    admin_password = Config._require_env("ADMIN_PASSWORD", known_bad={"admin", "password", ""})
+
     # Flask config
-    app.config["SECRET_KEY"] = Config.SECRET_KEY
+    app.config["SECRET_KEY"] = secret_key
     app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["ADMIN_PASSWORD"] = Config.ADMIN_PASSWORD
+    app.config["ADMIN_PASSWORD"] = admin_password
+
+    # Session cookie security
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = False  # set True if serving over HTTPS
+
+    # CSRF
+    app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
 
     # Extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
+    limiter.init_app(app)
+
+    # Security headers
+    @app.after_request
+    def _security_headers(response):
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return response
 
     # Scheduler — MemoryJobStore since jobs are always re-registered at startup
     scheduler.configure(

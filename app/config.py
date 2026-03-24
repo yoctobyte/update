@@ -44,10 +44,23 @@ class Config:
         }
 
     # Flask
-    SECRET_KEY: str = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
+    @classmethod
+    def _require_env(cls, name: str, known_bad: tuple = ()) -> str:
+        val = os.environ.get(name, "")
+        if not val:
+            raise RuntimeError(
+                f"Required environment variable '{name}' is not set. "
+                f"Add it to your .env file."
+            )
+        if val in known_bad:
+            raise RuntimeError(
+                f"Environment variable '{name}' is set to an insecure default ('{val}'). "
+                f"Please change it."
+            )
+        return val
 
-    # Admin
-    ADMIN_PASSWORD: str = os.environ.get("ADMIN_PASSWORD", "admin")
+    SECRET_KEY: str = ""   # set in create_app after validation
+    ADMIN_PASSWORD: str = ""  # set in create_app after validation
 
     # AI models — read from env, else fall back to ~/.config/openai_api_key.txt
     @classmethod

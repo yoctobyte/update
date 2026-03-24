@@ -7,7 +7,7 @@ from flask import (
 )
 
 from . import bp
-from ...extensions import db
+from ...extensions import db, limiter
 from ...models import (
     Source, ExtractionRule, Story, StoryMergeLog,
     Article, Topic, Event, SuggestedTopic
@@ -36,6 +36,7 @@ def login_required(f):
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute; 30 per hour")
 def login():
     if request.method == "POST":
         pw = request.form.get("password", "")
@@ -95,12 +96,34 @@ def _normalize_source_url(raw: str) -> str:
     return raw
 
 
+def _validate_source_url(url: str) -> str | None:
+    """Return error string if URL is not safe to scrape, else None."""
+    import ipaddress
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return "Alleen http:// en https:// URLs zijn toegestaan."
+    host = parsed.hostname or ""
+    # Block IP literals pointing to private/loopback ranges
+    try:
+        addr = ipaddress.ip_address(host)
+        if addr.is_private or addr.is_loopback or addr.is_link_local:
+            return "Interne IP-adressen zijn niet toegestaan als bron."
+    except ValueError:
+        pass  # hostname, not an IP literal — fine
+    return None
+
+
 @bp.route("/bronnen/nieuw", methods=["GET", "POST"])
 @login_required
 def source_new():
     if request.method == "POST":
         raw_url = request.form.get("url", "").strip()
         url = _normalize_source_url(raw_url)
+        err = _validate_source_url(url)
+        if err:
+            flash(err, "error")
+            return render_template("admin/source_form.html", source=None)
         name = request.form.get("name", "").strip() or raw_url
         src_type = request.form.get("type", "link_page")  # 'rss' | 'link_page' | 'article_page' | 'agenda'
 
@@ -132,6 +155,10 @@ def source_edit(source_id):
     if request.method == "POST":
         raw_url = request.form.get("url", "").strip()
         url = _normalize_source_url(raw_url)
+        err = _validate_source_url(url)
+        if err:
+            flash(err, "error")
+            return render_template("admin/source_form.html", source=source)
         source.name = request.form.get("name", "").strip() or raw_url
         source.base_url = url
         source.type = request.form.get("type", "link_page")
