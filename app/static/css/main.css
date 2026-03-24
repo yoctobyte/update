@@ -341,7 +341,7 @@ h1, h2, h3, h4 {
 main {
   flex: 1;
   width: 100%;
-  padding: 1.8rem 2rem 2.5rem;
+  padding: 0.5rem 2rem 2.5rem;
 }
 
 /* Topic filter sits above the grid, full width */
@@ -350,6 +350,7 @@ main {
   align-items: flex-start;
   gap: 0.8rem;
   padding: 0.5rem 0 0.6rem;
+  margin-top: 0;
   margin-bottom: 1.2rem;
   border-bottom: 1px solid var(--c-border);
 }
@@ -357,12 +358,12 @@ main {
   order: 2;
   margin-left: auto;
   padding-left: 1.2rem;
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 600;
   white-space: nowrap;
   color: var(--c-text-muted);
   margin-bottom: 0;
-  line-height: 1.8;   /* align with pill height */
+  line-height: 1.5;
 }
 .page-header .topic-filter {
   order: 1;
