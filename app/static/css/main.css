@@ -278,7 +278,9 @@ h1, h2, h3, h4 {
   gap: 1.5rem;
   padding: 0 2rem;
   height: 62px;
-  background: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 40%);
+  background:
+    linear-gradient(to bottom, var(--c-bg) 1px, transparent 6px),
+    linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 40%);
   border: none;
   transition: background 0.25s;
   color: var(--c-hdr-text);
