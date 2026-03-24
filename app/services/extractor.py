@@ -35,6 +35,8 @@ def extract_article(article: Article) -> bool:
 
     Returns True when a summary was successfully written.
     """
+    _MAX_ATTEMPTS = 5
+
     source = article.source
 
     # ── RSS: self-contained, no URL fetching ──────────────────────────────────
@@ -56,10 +58,18 @@ def extract_article(article: Article) -> bool:
         return False
 
     # ── All other types: fetch URL and apply content rule ─────────────────────
+    article.extract_attempts = (article.extract_attempts or 0) + 1
+    if article.extract_attempts >= _MAX_ATTEMPTS:
+        article.skip_extraction = True
+        db.session.commit()
+        logger.warning("Giving up on %s after %d attempts", article.url, article.extract_attempts)
+        return False
+
     rules = _active_rules(source, purpose="content")
 
     html = _fetch_html(article.url, source)
     if html is None:
+        db.session.commit()  # persist incremented attempt count
         logger.warning("Could not fetch %s", article.url)
         return False
     # cache_html is now handled inside _fetch_html / browser.get_html
@@ -126,7 +136,11 @@ def extract_all_pending(app) -> None:
     full extraction or RSS rewrite — so missing summary = worth trying again).
     """
     with app.app_context():
-        articles = Article.query.filter(Article.summary.is_(None)).limit(50).all()
+        articles = (
+            Article.query
+            .filter(Article.summary.is_(None), Article.skip_extraction == False)
+            .limit(50).all()
+        )
         for article in articles:
             extract_article(article)
 

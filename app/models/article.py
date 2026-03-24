@@ -20,6 +20,9 @@ class Article(db.Model):
     # geo_scope: null = not yet classified (pending extraction); set by LLM after rewrite.
     # Values: "local", "region", "province", "national", "intl"
     geo_scope = db.Column(db.String(10), nullable=True, index=True)
+    # extraction tracking: how many times we tried; skip_extraction = give up permanently
+    extract_attempts = db.Column(db.Integer, nullable=False, default=0)
+    skip_extraction  = db.Column(db.Boolean, nullable=False, default=False)
 
     source = db.relationship("Source", back_populates="articles")
     topics = db.relationship("Topic", secondary=article_topics, back_populates="articles")
