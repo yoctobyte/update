@@ -33,6 +33,7 @@
       btn.classList.toggle('active', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    window.dispatchEvent(new Event('resize'));
   }
 
   // ── Apply immediately (before DOM, prevents FOUC) ────────────────────────────

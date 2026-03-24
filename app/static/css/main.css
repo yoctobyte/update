@@ -153,9 +153,10 @@ h1, h2, h3, h4 {
   gap: 0.25rem;
   padding: 0 1rem;
   height: 32px;
+  position: relative;
+  z-index: 1;
   background: var(--c-bg);
-  border-bottom: 1px solid;
-  border-image: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 40%) 1;
+  box-shadow: 0 2px 0 0 var(--c-bg);
   font-family: system-ui, sans-serif;
   font-size: 0.78rem;
   color: var(--c-util-text);
@@ -278,9 +279,7 @@ h1, h2, h3, h4 {
   gap: 1.5rem;
   padding: 0 2rem;
   height: 62px;
-  background:
-    linear-gradient(to bottom, var(--c-bg) 1px, transparent 6px),
-    linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 40%);
+  background: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 70%);
   border: none;
   transition: background 0.25s;
   color: var(--c-hdr-text);
@@ -860,7 +859,7 @@ a.tag:hover { background: var(--c-accent); color: #fff; text-decoration: none; }
   color: inherit;
   display: block;
 }
-.article-snippet-link:hover .article-snippet { color: var(--c-accent); }
+.article-snippet-link:hover { text-decoration: none; color: inherit; }
 
 /* Favicon link in card footer */
 .source-favicon-link {

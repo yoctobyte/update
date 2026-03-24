@@ -29,13 +29,6 @@
         </a>
       {% endif %}
 
-      {% if article.topics %}
-        <div class="article-topics">
-          {% for topic in article.topics %}
-            <a href="{{ url_for('main.index', topic=topic.id) }}" class="tag">{{ topic.name }}</a>
-          {% endfor %}
-        </div>
-      {% endif %}
 
       {% set active_stories = article.stories | selectattr("status", "equalto", "active") | list %}
       {% if active_stories %}
