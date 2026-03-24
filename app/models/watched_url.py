@@ -13,6 +13,7 @@ class WatchedURL(db.Model):
     is_rss = db.Column(db.Boolean, nullable=True)  # None = not yet detected
     fetch_interval_hours = db.Column(db.Integer, nullable=False, default=6)
     last_fetched_at = db.Column(db.DateTime, nullable=True)
+    consecutive_failures = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):

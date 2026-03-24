@@ -90,6 +90,15 @@ def fetch_all_watched(app) -> None:
             ok = fetch_watched_url(entry)
             if ok:
                 entry.last_fetched_at = now
+                entry.consecutive_failures = 0
                 fetched += 1
+            else:
+                entry.consecutive_failures = (entry.consecutive_failures or 0) + 1
+                if entry.consecutive_failures >= 10:
+                    entry.active = False
+                    logger.warning(
+                        "Watcher: deactivating %s after %d consecutive failures",
+                        entry.url, entry.consecutive_failures,
+                    )
         db.session.commit()
         logger.info("Watcher: fetched %d/%d URLs", fetched, len(entries))

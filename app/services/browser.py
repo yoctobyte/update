@@ -73,7 +73,7 @@ def render_with_playwright(url: str, cookie_accept_selector: str | None = None) 
                 user_agent=REQUEST_HEADERS["User-Agent"],
                 extra_http_headers={"Accept-Language": "nl-NL,nl;q=0.9"},
             )
-            page.goto(url, wait_until="networkidle", timeout=30_000)
+            page.goto(url, wait_until="domcontentloaded", timeout=15_000)
 
             if cookie_accept_selector:
                 try:
