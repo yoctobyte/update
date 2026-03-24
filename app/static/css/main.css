@@ -455,6 +455,17 @@ main {
   font-family: system-ui, sans-serif;
 }
 
+.geo-badge {
+  font-size: 0.68rem;
+  font-family: system-ui, sans-serif;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  opacity: 0.75;
+  background: var(--c-surface);
+  color: var(--c-text-muted);
+  border: 1px solid var(--c-border);
+}
+
 .ext-indicator {
   font-size: 0.95rem;
   color: var(--c-text-muted);

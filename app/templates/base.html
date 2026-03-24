@@ -98,6 +98,8 @@
          {% if request.endpoint and 'event' in request.endpoint %}class="active"{% endif %}>Agenda</a>
       <a href="{{ url_for('main.opinie_list') }}"
          {% if request.endpoint and 'opinie' in request.endpoint %}class="active"{% endif %}>Opinie</a>
+      <a href="{{ url_for('main.alles') }}"
+         {% if request.endpoint == 'main.alles' %}class="active"{% endif %}>Alles</a>
       <a href="{{ url_for('main.about') }}"
          {% if request.endpoint == 'main.about' %}class="active"{% endif %}>Over ons</a>
     </nav>

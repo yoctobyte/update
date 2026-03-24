@@ -204,6 +204,35 @@ def internationaal():
     )
 
 
+# ── Alles ─────────────────────────────────────────────────────────────────────
+
+@bp.route("/alles")
+def alles():
+    page = request.args.get("page", 1, type=int)
+    topic_id = request.args.get("topic", type=int)
+
+    query = (
+        Article.query
+        .join(Article.source)
+        .filter_by(active=True)
+        .filter(Article.summary.isnot(None))
+        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+    )
+    if topic_id:
+        query = query.filter(Article.topics.any(id=topic_id))
+
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    topics = Topic.query.order_by(Topic.name).all()
+    active_topic = Topic.query.get(topic_id) if topic_id else None
+
+    return render_template(
+        "main/alles.html",
+        pagination=pagination,
+        topics=topics,
+        active_topic=active_topic,
+    )
+
+
 # ── Stories ───────────────────────────────────────────────────────────────────
 
 @bp.route("/verhalen")
