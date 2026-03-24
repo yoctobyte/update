@@ -39,11 +39,16 @@ def login_required(f):
 @limiter.limit("10 per minute; 30 per hour")
 def login():
     if request.method == "POST":
-        pw = request.form.get("password", "")
-        if pw == current_app.config["ADMIN_PASSWORD"]:
+        import bcrypt
+        pw = request.form.get("password", "").encode()
+        stored_hash = current_app.config.get("ADMIN_PASSWORD_HASH", "").encode()
+        if not stored_hash:
+            flash("Beheerderswachtwoord niet geconfigureerd. Voer ./changepassword.sh uit.", "error")
+        elif bcrypt.checkpw(pw, stored_hash):
             session["admin_logged_in"] = True
             return redirect(url_for("admin.dashboard"))
-        flash("Onjuist wachtwoord.", "error")
+        else:
+            flash("Onjuist wachtwoord.", "error")
     return render_template("admin/login.html")
 
 

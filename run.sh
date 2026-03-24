@@ -29,12 +29,18 @@ if [ ! -f "$TOWNS_FILE" ]; then
     exit 1
 fi
 
-TOWNS=$(python3 -c "
-import json
-towns = json.load(open('$TOWNS_FILE'))
+TOWNS=$(python3 - <<'PYEOF'
+import json, sys
+from pathlib import Path
+towns = json.loads(Path("towns.json").read_text())
 for t in towns:
-    print(t['town'], t['port'], t['password'])
-")
+    h = t.get("password_hash", "")
+    if not h:
+        print(f"ERROR: town '{t['town']}' has no password_hash. Run: ./changepassword.sh {t['town']} <password>", file=sys.stderr)
+        sys.exit(1)
+    print(f"{t['town']}|{t['port']}|{h}")
+PYEOF
+)
 
 if [ -z "$TOWNS" ]; then
     echo "towns.json is empty. Run ./addtown.sh <town> <port> <password> first."
@@ -42,7 +48,7 @@ if [ -z "$TOWNS" ]; then
 fi
 
 # ── Start each town ───────────────────────────────────────────────────────────
-while IFS=' ' read -r TOWN PORT PASSWORD; do
+while IFS='|' read -r TOWN PORT HASH; do
     PIDFILE="$SCRIPT_DIR/.${TOWN}.pid"
 
     # Kill previous instance for this town
@@ -66,15 +72,15 @@ while IFS=' ' read -r TOWN PORT PASSWORD; do
 
     # Migrate database before starting
     echo "[$TOWN] Running migrations..."
-    TOWN="$TOWN" flask db upgrade
+    TOWN="$TOWN" ADMIN_PASSWORD_HASH="$HASH" flask db upgrade
 
     # Start
     if [ "$DEBUG" = "1" ]; then
         echo "[$TOWN] Starting on port $PORT (Werkzeug debug)..."
-        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD="$PASSWORD" FLASK_DEBUG=1 python wsgi.py &
+        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD_HASH="$HASH" FLASK_DEBUG=1 python wsgi.py &
     else
         echo "[$TOWN] Starting on port $PORT (gunicorn)..."
-        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD="$PASSWORD" FLASK_DEBUG=0 \
+        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD_HASH="$HASH" FLASK_DEBUG=0 \
             gunicorn --bind "0.0.0.0:$PORT" --workers 2 --timeout 120 wsgi:app &
     fi
     echo $! > "$PIDFILE"

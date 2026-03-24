@@ -33,31 +33,36 @@ source "$VENV/bin/activate"
 pip install -q --upgrade pip
 pip install -q -r requirements.txt
 
-# ── Update towns.json ─────────────────────────────────────────────────────────
-python3 - <<EOF
-import json, sys
+# ── Hash password + update towns.json ────────────────────────────────────────
+TOWN_NAME="$TOWN" PORT_NUM="$PORT" TOWN_PASS="$PASSWORD" python3 - <<'PYEOF'
+import os, json, sys, bcrypt
 from pathlib import Path
 
-towns_file = Path("$TOWNS_FILE")
+town     = os.environ["TOWN_NAME"]
+port     = int(os.environ["PORT_NUM"])
+password = os.environ["TOWN_PASS"]
+
+pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+towns_file = Path("towns.json")
 towns = json.loads(towns_file.read_text()) if towns_file.exists() else []
 
-# Check for conflicts
 for t in towns:
-    if t["town"] == "$TOWN":
-        print(f"Town '$TOWN' already exists. Remove it from towns.json first.")
+    if t["town"] == town:
+        print(f"Town '{town}' already exists. Remove it from towns.json first.")
         sys.exit(1)
-    if t["port"] == $PORT:
-        print(f"Port $PORT is already in use by town '{t['town']}'.")
+    if t["port"] == port:
+        print(f"Port {port} is already in use by town '{t['town']}'.")
         sys.exit(1)
 
-towns.append({"town": "$TOWN", "port": $PORT, "password": "$PASSWORD"})
+towns.append({"town": town, "port": port, "password_hash": pw_hash})
 towns_file.write_text(json.dumps(towns, indent=2))
-print(f"Added town '$TOWN' on port $PORT.")
-EOF
+print(f"Added town '{town}' on port {port}.")
+PYEOF
 
 # ── Init town database ────────────────────────────────────────────────────────
 echo "Initializing town '$TOWN'..."
-TOWN="$TOWN" ADMIN_PASSWORD="$PASSWORD" flask --app wsgi init-town "$TOWN"
+TOWN="$TOWN" flask --app wsgi init-town "$TOWN"
 
 echo ""
 echo "Done. Run ./run.sh to start all towns."

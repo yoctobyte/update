@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import os
 from flask import Flask, request
 from .config import Config
 from .extensions import db, migrate, csrf, limiter, scheduler
@@ -23,13 +24,14 @@ def create_app(town: str = None) -> Flask:
 
     # Validate and load secrets
     secret_key = Config._require_env("FLASK_SECRET_KEY", known_bad=_BAD_SECRETS)
-    admin_password = Config._require_env("ADMIN_PASSWORD", known_bad={"admin", "password", ""})
 
     # Flask config
     app.config["SECRET_KEY"] = secret_key
     app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["ADMIN_PASSWORD"] = admin_password
+    # Password hash is optional at startup (not needed for migrations/CLI);
+    # the login route will refuse if it is absent.
+    app.config["ADMIN_PASSWORD_HASH"] = os.environ.get("ADMIN_PASSWORD_HASH", "")
 
     # Session cookie security
     app.config["SESSION_COOKIE_HTTPONLY"] = True

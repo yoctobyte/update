@@ -3,6 +3,7 @@ flask-sqlalchemy>=3.1
 flask-migrate>=4.0
 flask-wtf>=1.2
 flask-limiter>=3.5
+bcrypt>=4.0
 APScheduler>=3.10
 openai>=1.30
 feedparser>=6.0
