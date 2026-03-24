@@ -382,6 +382,7 @@ main {
 .article-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-rows: masonry;
   gap: 1.4rem 1.8rem;
   align-items: start;
 }
