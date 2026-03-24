@@ -4,6 +4,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# ── Parse flags ───────────────────────────────────────────────────────────────
+DEBUG=0
+for arg in "$@"; do
+  [ "$arg" = "--debug" ] && DEBUG=1
+done
+
 VENV="$SCRIPT_DIR/.venv"
 TOWNS_FILE="$SCRIPT_DIR/towns.json"
 
@@ -63,8 +69,14 @@ while IFS=' ' read -r TOWN PORT PASSWORD; do
     TOWN="$TOWN" flask db upgrade
 
     # Start
-    echo "[$TOWN] Starting on port $PORT..."
-    TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD="$PASSWORD" FLASK_DEBUG="${FLASK_DEBUG:-0}" python wsgi.py &
+    if [ "$DEBUG" = "1" ]; then
+        echo "[$TOWN] Starting on port $PORT (Werkzeug debug)..."
+        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD="$PASSWORD" FLASK_DEBUG=1 python wsgi.py &
+    else
+        echo "[$TOWN] Starting on port $PORT (gunicorn)..."
+        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD="$PASSWORD" FLASK_DEBUG=0 \
+            gunicorn --bind "0.0.0.0:$PORT" --workers 2 --timeout 120 wsgi:app &
+    fi
     echo $! > "$PIDFILE"
     echo "[$TOWN] Running as PID $(cat $PIDFILE)"
 
