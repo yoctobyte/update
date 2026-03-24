@@ -51,6 +51,10 @@ def extract_article(article: Article) -> bool:
                 if source.trusted_local:
                     article.geo_scope = "local"
                 else:
+                    geo_scope = _verify_geo_scope(
+                        geo_scope, article.title,
+                        article.extracted_text or "", geo_ctx,
+                    )
                     article.geo_scope = geo_scope
                 _apply_topic_labels(article, topic_labels)
                 db.session.commit()
@@ -100,6 +104,10 @@ def extract_article(article: Article) -> bool:
                 if source.trusted_local:
                     article.geo_scope = "local"
                 else:
+                    geo_scope = _verify_geo_scope(
+                        geo_scope, article.title,
+                        article.extracted_text or "", geo_ctx,
+                    )
                     article.geo_scope = geo_scope
                 _apply_topic_labels(article, topic_labels)
             if rule.scope == "once":
@@ -389,6 +397,34 @@ def get_cached_article_html(source: Source) -> str | None:
         if html is not None:
             return html
     return None
+
+
+# ── Geo verification ──────────────────────────────────────────────────────────
+
+def _verify_geo_scope(geo_scope: str, title: str, text: str, geo_ctx: dict) -> str:
+    """
+    Cross-check the LLM's geo_scope against keyword presence in the article text.
+    If the LLM claims "local" but the town name isn't in the content, demote it
+    to the most specific scope that IS supported by the text.
+    Only applied to non-trusted sources.
+    """
+    haystack = (title + " " + text[:2000]).lower()
+
+    town = geo_ctx.get("town", "").lower()
+    region_towns = [t.lower() for t in (geo_ctx.get("region_towns") or [])]
+    province_towns = [t.lower() for t in (geo_ctx.get("province_towns") or [])]
+
+    if geo_scope == "local":
+        if town and town in haystack:
+            return "local"
+        # Town not found — demote based on what IS present
+        if any(t in haystack for t in region_towns):
+            return "region"
+        if any(t in haystack for t in province_towns):
+            return "province"
+        return "region"   # conservative fallback for regional sources
+
+    return geo_scope
 
 
 # ── Topic helpers ─────────────────────────────────────────────────────────────
