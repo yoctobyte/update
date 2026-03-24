@@ -12,7 +12,7 @@
   {# Source + dates meta bar #}
   <div class="article-detail-meta">
     <a href="{{ article.url }}" target="_blank" rel="noopener" class="article-detail-source">
-      <img src="https://www.google.com/s2/favicons?domain={{ article.source.base_url }}&sz=32"
+      <img src="{{ url_for('main.source_favicon', source_id=article.source.id) }}"
            class="source-favicon" alt="" width="16" height="16">
       {{ article.source.name }}
     </a>
@@ -55,7 +55,7 @@
           <ul class="related-article-list">
             {% for a in articles[:8] %}
               <li>
-                <img src="https://www.google.com/s2/favicons?domain={{ a.source.base_url }}&sz=32"
+                <img src="{{ url_for('main.source_favicon', source_id=a.source.id) }}"
                      class="source-favicon" alt="{{ a.source.name }}" width="14" height="14">
                 <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.title }}</a>
                 <span class="meta-muted">— {{ a.source.name }}</span>
@@ -74,7 +74,7 @@
       <ul class="source-list">
         {% for a in same_url_others %}
           <li>
-            <img src="https://www.google.com/s2/favicons?domain={{ a.source.base_url }}&sz=32"
+            <img src="{{ url_for('main.source_favicon', source_id=a.source.id) }}"
                  class="source-favicon" alt="{{ a.source.name }}" width="16" height="16">
             <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.source.name }}</a>
             <span class="meta-muted">— gezien {{ a.created_at.strftime('%-d %b %Y') }}</span>

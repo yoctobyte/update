@@ -33,7 +33,7 @@
         <div class="article-sources">
           <a href="{{ article.url }}" target="_blank" rel="noopener"
              title="{{ article.source.name }}" class="source-favicon-link">
-            <img src="https://www.google.com/s2/favicons?domain={{ article.source.base_url }}&sz=32"
+            <img src="{{ url_for('main.source_favicon', source_id=article.source.id) }}"
                  class="source-favicon" alt="{{ article.source.name }}"
                  width="16" height="16" loading="lazy">
           </a>

@@ -1,8 +1,8 @@
 import json
-from flask import render_template, request, abort, redirect, url_for, flash, current_app
+from flask import render_template, request, abort, redirect, url_for, flash, current_app, send_file, Response
 from . import bp
-from ...models import Article, Story, Event, Topic, Opinion, ContactMessage
-from ...extensions import db
+from ...models import Article, Story, Event, Topic, Opinion, ContactMessage, Source
+from ...extensions import db, limiter
 from ...config import Config
 
 
@@ -306,6 +306,7 @@ def opinie_detail(opinion_id):
 
 
 @bp.route("/opinie/insturen", methods=["GET", "POST"])
+@limiter.limit("5 per minute; 20 per hour", methods=["POST"])
 def opinie_insturen():
     if request.method == "POST":
         pen_name = request.form.get("pen_name", "").strip()
@@ -377,6 +378,7 @@ def about():
 
 
 @bp.route("/over-ons/contact", methods=["POST"])
+@limiter.limit("5 per minute; 10 per hour")
 def contact_submit():
     name    = request.form.get("name", "").strip()
     email   = request.form.get("email", "").strip() or None
@@ -402,3 +404,46 @@ def contact_submit():
                            contact=cfg.get("contact", {}),
                            sponsors=cfg.get("sponsors", []),
                            form_sent=True)
+
+
+# ── Favicon proxy ─────────────────────────────────────────────────────────────
+
+# Tiny grey square SVG used as fallback when a site has no /favicon.ico
+_FAVICON_PLACEHOLDER = (
+    b'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">'
+    b'<rect width="16" height="16" rx="3" fill="#ccc"/></svg>'
+)
+
+
+@bp.route("/favicon/<int:source_id>.png")
+def source_favicon(source_id):
+    """Serve a cached favicon fetched directly from the source domain."""
+    import requests
+    from urllib.parse import urlparse
+
+    source = Source.query.get_or_404(source_id)
+
+    favicon_dir = Config.town_cache_path().parent / "favicons"
+    favicon_dir.mkdir(exist_ok=True)
+    cache_path = favicon_dir / f"{source_id}.png"
+
+    if cache_path.exists():
+        return send_file(cache_path, mimetype="image/png")
+
+    # Fetch directly from source domain — no third-party involved
+    parsed = urlparse(source.base_url)
+    origin = f"{parsed.scheme}://{parsed.netloc}"
+    try:
+        resp = requests.get(
+            f"{origin}/favicon.ico",
+            timeout=5,
+            headers={"User-Agent": "LokaalNieuws/1.0"},
+            allow_redirects=True,
+        )
+        if resp.status_code == 200 and resp.content:
+            cache_path.write_bytes(resp.content)
+            return send_file(cache_path, mimetype=resp.headers.get("Content-Type", "image/x-icon"))
+    except Exception:
+        pass
+
+    return Response(_FAVICON_PLACEHOLDER, mimetype="image/svg+xml")
