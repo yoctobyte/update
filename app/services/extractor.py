@@ -177,6 +177,8 @@ def tag_untagged_articles(app, batch: int = 30) -> int:
             .all()
         )
 
+        overig = topic_map.get("overig")
+
         tagged = 0
         for article in untagged:
             matches = suggest_topics(
@@ -188,7 +190,9 @@ def tag_untagged_articles(app, batch: int = 30) -> int:
                 topic = topic_map.get(name.lower())
                 if topic and topic not in article.topics:
                     article.topics.append(topic)
-            if matches:
+            if not matches and overig and overig not in article.topics:
+                article.topics.append(overig)
+            if matches or overig:
                 tagged += 1
 
         db.session.commit()
@@ -476,11 +480,15 @@ def _apply_topic_labels(article: Article, topic_labels: list[str]) -> None:
     """
     Match LLM-suggested topic labels against existing Topics (case-insensitive).
     Assign matched ones to the article; queue unmatched ones as SuggestedTopics.
+    Falls back to 'Overig' if nothing matched and that topic exists.
     """
-    if not topic_labels:
-        return
-
     existing = {t.name.lower(): t for t in Topic.query.all()}
+
+    if not topic_labels:
+        overig = existing.get("overig")
+        if overig and overig not in article.topics:
+            article.topics.append(overig)
+        return
 
     for label in topic_labels:
         label_lower = label.lower()
