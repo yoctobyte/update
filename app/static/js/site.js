@@ -113,3 +113,77 @@
   });
 
 })();
+
+// ── Masonry layout ────────────────────────────────────────────────────────────
+// Falls back gracefully if CSS native masonry is already active or JS disabled.
+
+(function () {
+  'use strict';
+
+  function masonry(grid) {
+    // Only run if the browser didn't apply native CSS masonry
+    if (getComputedStyle(grid).gridTemplateRows === 'masonry') return;
+
+    var items = Array.prototype.slice.call(grid.children);
+    if (items.length < 2) return;
+
+    // Reset any previous absolute positioning so we can measure natural heights
+    grid.style.position = 'relative';
+    items.forEach(function (el) {
+      el.style.position = '';
+      el.style.top      = '';
+      el.style.left     = '';
+      el.style.width    = '';
+    });
+
+    // Measure column count and gap from computed style
+    var cs       = getComputedStyle(grid);
+    var colCount = cs.gridTemplateColumns.split(' ').length;
+    if (colCount < 2) {
+      // Single column — no masonry needed, clear and return
+      grid.style.height = '';
+      return;
+    }
+    var colGap   = parseFloat(cs.columnGap)  || 0;
+    var rowGap   = parseFloat(cs.rowGap)     || 0;
+    var colW     = (grid.clientWidth - colGap * (colCount - 1)) / colCount;
+
+    // Measure each item's natural height at the correct width
+    items.forEach(function (el) {
+      el.style.width    = colW + 'px';
+      el.style.position = 'absolute';
+    });
+
+    var tops = new Array(colCount).fill(0);
+
+    items.forEach(function (el) {
+      // Place in the shortest column
+      var col = tops.indexOf(Math.min.apply(null, tops));
+      var x   = col * (colW + colGap);
+      var y   = tops[col];
+      el.style.left = x + 'px';
+      el.style.top  = y + 'px';
+      tops[col] += el.offsetHeight + rowGap;
+    });
+
+    grid.style.height = Math.max.apply(null, tops) - rowGap + 'px';
+  }
+
+  function applyAll() {
+    document.querySelectorAll('.article-list').forEach(masonry);
+  }
+
+  // Run after full paint so images/fonts don't shift heights
+  if (document.readyState === 'complete') {
+    applyAll();
+  } else {
+    window.addEventListener('load', applyAll);
+  }
+
+  // Re-run on resize (debounced)
+  var _rTimer;
+  window.addEventListener('resize', function () {
+    clearTimeout(_rTimer);
+    _rTimer = setTimeout(applyAll, 120);
+  });
+})();
