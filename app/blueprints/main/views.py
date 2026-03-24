@@ -447,3 +447,36 @@ def source_favicon(source_id):
         pass
 
     return Response(_FAVICON_PLACEHOLDER, mimetype="image/svg+xml")
+
+
+# ── robots.txt ────────────────────────────────────────────────────────────────
+
+_ROBOTS_TXT = """\
+User-agent: *
+# Public content — welcome
+Allow: /
+Allow: /regio
+Allow: /provincie
+Allow: /nationaal
+Allow: /internationaal
+Allow: /verhalen
+Allow: /agenda
+Allow: /opinie
+Allow: /over-ons
+Allow: /artikel/
+
+# No value for crawlers
+Disallow: /admin/
+Disallow: /favicon/
+Disallow: /opinie/bewerken/
+Disallow: /over-ons/contact
+Disallow: /alles
+
+# Avoid indexing paginated duplicates
+Disallow: /*?page=
+"""
+
+
+@bp.route("/robots.txt")
+def robots_txt():
+    return Response(_ROBOTS_TXT, mimetype="text/plain")
