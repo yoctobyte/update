@@ -168,7 +168,7 @@ h1, h2, h3, h4 {
 .util-group + .util-group {
   margin-left: 0.6rem;
   padding-left: 0.6rem;
-  border-left: 1px solid var(--c-util-border);
+  border-left: 0px solid var(--c-util-border);
 }
 .util-right { margin-left: auto; }
 .util-admin-group { margin-left: auto !important; border-left: none; }
@@ -237,12 +237,13 @@ h1, h2, h3, h4 {
 
 .top-section {
   position: relative;
+  overflow: hidden;
 }
 
 .site-title-overlay {
   position: absolute;
-  top: 0;
-  right: 40px;
+  top: -15px;
+  right: 60px;
   height: 94px;          /* 32px util-bar + 62px site-header */
   display: flex;
   flex-direction: column;
@@ -275,7 +276,7 @@ h1, h2, h3, h4 {
   gap: 1.5rem;
   padding: 0 2rem;
   height: 62px;
-  background: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 60%);
+  background: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 40%);
   border: none;
   transition: background 0.25s;
   color: var(--c-hdr-text);
@@ -285,7 +286,7 @@ h1, h2, h3, h4 {
 .site-header,
 .site-header a,
 .site-header .site-logo {
-  text-shadow: 0 1px 3px rgba(0,0,0,0.45);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.85);
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
 }
 
