@@ -2,10 +2,7 @@
 {% block title %}Regio{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Regio</h1>
-  {% if region_towns %}
-    <p class="page-subtitle">Nieuws uit de regio: {{ region_towns | join(', ') }}</p>
-  {% endif %}
+  <h1>Regio{% if region_towns %}<br><small class="page-subtitle">{{ region_towns | join(', ') }}</small>{% endif %}</h1>
   <div class="topic-filter">
     <a href="{{ url_for('main.regio') }}" {% if not active_topic %}class="active"{% endif %}>Alle</a>
     {% for topic in topics %}

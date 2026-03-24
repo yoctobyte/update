@@ -346,11 +346,35 @@ main {
 
 /* Topic filter sits above the grid, full width */
 .page-header {
-  margin-bottom: 1.4rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 0.5rem 0 0.6rem;
+  margin-bottom: 1.2rem;
+  border-bottom: 1px solid var(--c-border);
 }
 .page-header h1 {
-  font-size: 1.5rem;
-  margin-bottom: 0.7rem;
+  order: 2;
+  margin-left: auto;
+  padding-left: 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--c-text-muted);
+  margin-bottom: 0;
+  line-height: 1.8;   /* align with pill height */
+}
+.page-header .topic-filter {
+  order: 1;
+  flex: 1;
+}
+.page-header h1 small.page-subtitle {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  opacity: 0.65;
+  white-space: normal;
+  text-align: right;
 }
 
 /* Responsive multi-column article grid */
