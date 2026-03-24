@@ -72,10 +72,15 @@ def embed_pending(app, batch_size: int = 16) -> int:
                 article.embedding = raw
 
                 # Also write to vec0 virtual table for KNN queries
+                # DELETE first — vec0 virtual tables don't support INSERT OR REPLACE
                 vec_bytes = _to_vec_bytes(vector)
                 db.session.execute(
+                    db.text("DELETE FROM article_embeddings WHERE article_id = :aid"),
+                    {"aid": article.id},
+                )
+                db.session.execute(
                     db.text(
-                        "INSERT OR REPLACE INTO article_embeddings(article_id, embedding) "
+                        "INSERT INTO article_embeddings(article_id, embedding) "
                         "VALUES (:aid, :emb)"
                     ),
                     {"aid": article.id, "emb": vec_bytes},
