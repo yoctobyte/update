@@ -154,6 +154,8 @@ h1, h2, h3, h4 {
   padding: 0 1rem;
   height: 32px;
   background: var(--c-bg);
+  border-bottom: 1px solid;
+  border-image: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 40%) 1;
   font-family: system-ui, sans-serif;
   font-size: 0.78rem;
   color: var(--c-util-text);
@@ -275,8 +277,7 @@ h1, h2, h3, h4 {
   justify-content: flex-start;
   gap: 1.5rem;
   padding: 0 2rem;
-  height: 63px;
-  margin-top: -1px;
+  height: 62px;
   background: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 40%);
   border: none;
   transition: background 0.25s;
