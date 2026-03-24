@@ -1,0 +1,22 @@
+User-agent: *
+# Public content — welcome
+Allow: /
+Allow: /regio
+Allow: /provincie
+Allow: /nationaal
+Allow: /internationaal
+Allow: /verhalen
+Allow: /agenda
+Allow: /opinie
+Allow: /over-ons
+Allow: /artikel/
+
+# No value for crawlers
+Disallow: /admin/
+Disallow: /favicon/
+Disallow: /opinie/bewerken/
+Disallow: /over-ons/contact
+Disallow: /alles
+
+# Avoid indexing paginated duplicates
+Disallow: /*?page=

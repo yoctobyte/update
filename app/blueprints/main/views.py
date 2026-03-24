@@ -451,32 +451,9 @@ def source_favicon(source_id):
 
 # ── robots.txt ────────────────────────────────────────────────────────────────
 
-_ROBOTS_TXT = """\
-User-agent: *
-# Public content — welcome
-Allow: /
-Allow: /regio
-Allow: /provincie
-Allow: /nationaal
-Allow: /internationaal
-Allow: /verhalen
-Allow: /agenda
-Allow: /opinie
-Allow: /over-ons
-Allow: /artikel/
-
-# No value for crawlers
-Disallow: /admin/
-Disallow: /favicon/
-Disallow: /opinie/bewerken/
-Disallow: /over-ons/contact
-Disallow: /alles
-
-# Avoid indexing paginated duplicates
-Disallow: /*?page=
-"""
-
-
 @bp.route("/robots.txt")
 def robots_txt():
-    return Response(_ROBOTS_TXT, mimetype="text/plain")
+    from pathlib import Path
+    robots_file = Path(current_app.root_path).parent / "robots.txt"
+    text = robots_file.read_text(encoding="utf-8") if robots_file.exists() else "User-agent: *\nDisallow: /admin/\n"
+    return Response(text, mimetype="text/plain")
