@@ -49,13 +49,13 @@ class Config:
         val = os.environ.get(name, "")
         if not val:
             raise RuntimeError(
-                f"Required environment variable '{name}' is not set. "
-                f"Add it to your .env file."
+                f"Required environment variable '{name}' is not set.\n"
+                f"Run ./genenv.sh to create a .env file with a secure key."
             )
         if val in known_bad:
             raise RuntimeError(
-                f"Environment variable '{name}' is set to an insecure default ('{val}'). "
-                f"Please change it."
+                f"Environment variable '{name}' is set to an insecure default ('{val}').\n"
+                f"Run ./genenv.sh to regenerate a secure .env file."
             )
         return val
 
