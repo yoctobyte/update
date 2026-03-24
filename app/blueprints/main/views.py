@@ -26,8 +26,7 @@ def index():
         Article.query
         .join(Article.source)
         .filter_by(active=True)
-        # Show local articles plus NULL (trusted_local sources before extraction)
-        .filter(db.or_(Article.geo_scope == None, Article.geo_scope == "local"))
+        .filter(Article.geo_scope == "local")
         # Only publish once the AI rewrite is done
         .filter(Article.summary.isnot(None))
         .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())

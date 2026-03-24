@@ -17,8 +17,8 @@ class Article(db.Model):
     published_at = db.Column(db.DateTime, nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     hash = db.Column(db.String(64), unique=True, nullable=False, index=True)  # SHA-256 of URL
-    # geo_scope: null = no filter applied (assumed local); "local" = primary town confirmed;
-    # "region" = mentions a nearby region town
+    # geo_scope: null = not yet classified (pending extraction); set by LLM after rewrite.
+    # Values: "local", "region", "province", "national", "intl"
     geo_scope = db.Column(db.String(10), nullable=True, index=True)
 
     source = db.relationship("Source", back_populates="articles")
