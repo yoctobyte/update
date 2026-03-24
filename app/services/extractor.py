@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from ..extensions import db
 from ..models import Article, ExtractionRule, Source, Topic, SuggestedTopic
 from ..config import Config
-from .llm import rewrite_article
+from .llm import rewrite_article, suggest_topics
 from .browser import get_html as _browser_get_html, read_cache as _read_cache
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,8 @@ def extract_article(article: Article) -> bool:
     if source.type == "rss":
         if article.extracted_text:
             geo_ctx = Config.geo_context()
-            result = rewrite_article(article.title, article.extracted_text, geo_ctx)
+            existing_topic_names = [t.name for t in Topic.query.order_by(Topic.name).all()]
+            result = rewrite_article(article.title, article.extracted_text, geo_ctx, existing_topic_names)
             if result:
                 new_title, summary, geo_scope, topic_labels = result
                 article.title = new_title
@@ -91,12 +92,13 @@ def extract_article(article: Article) -> bool:
         )[:500]
 
     geo_ctx = Config.geo_context()
+    existing_topic_names = [t.name for t in Topic.query.order_by(Topic.name).all()]
     for rule in rules:
         text = apply_content_rule(rule, html)
         if text and len(text.strip()) > 50:
             article.extracted_text = text.strip()
             article.short_text = text.strip()[:300]
-            result = rewrite_article(article.title, article.extracted_text, geo_ctx)
+            result = rewrite_article(article.title, article.extracted_text, geo_ctx, existing_topic_names)
             if result:
                 new_title, summary, geo_scope, topic_labels = result
                 article.title = new_title
@@ -151,6 +153,47 @@ def extract_all_pending(app) -> None:
         )
         for article in articles:
             extract_article(article)
+
+
+def tag_untagged_articles(app, batch: int = 30) -> int:
+    """
+    Assign topics to articles that have a summary but no topics yet.
+    Uses the fast LLM model. Called from scheduler and CLI.
+    Returns number of articles tagged.
+    """
+    with app.app_context():
+        existing_topics = Topic.query.order_by(Topic.name).all()
+        if not existing_topics:
+            return 0
+        topic_names = [t.name for t in existing_topics]
+        topic_map = {t.name.lower(): t for t in existing_topics}
+
+        untagged = (
+            Article.query
+            .filter(Article.summary.isnot(None))
+            .filter(~Article.topics.any())
+            .order_by(Article.created_at.desc())
+            .limit(batch)
+            .all()
+        )
+
+        tagged = 0
+        for article in untagged:
+            matches = suggest_topics(
+                article.title,
+                article.summary,
+                topic_names,
+            )
+            for name in matches:
+                topic = topic_map.get(name.lower())
+                if topic and topic not in article.topics:
+                    article.topics.append(topic)
+            if matches:
+                tagged += 1
+
+        db.session.commit()
+        logger.info("Tagged %d/%d untagged articles with existing topics", tagged, len(untagged))
+        return tagged
 
 
 def suggest_rule_heuristic(source: "Source", purpose: str, html: str) -> dict | None:

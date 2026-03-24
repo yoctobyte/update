@@ -101,6 +101,20 @@ def register_commands(app: Flask) -> None:
             db.session.commit()
             click.echo(f"Classified {updated} of {len(articles)} articles.")
 
+    @app.cli.command("tag-articles")
+    @click.option("--batch", default=50, help="Articles per run (default 50)")
+    def tag_articles(batch):
+        """Tag articles that have a summary but no topics yet."""
+        from ..services.extractor import tag_untagged_articles
+        with app.app_context():
+            total = 0
+            while True:
+                n = tag_untagged_articles(app, batch=batch)
+                total += n
+                if n == 0:
+                    break
+            click.echo(f"Tagged {total} articles.")
+
     @app.cli.command("reset-articles")
     def reset_articles():
         """Delete all articles, stories, and merge logs so they are re-fetched and re-summarized."""

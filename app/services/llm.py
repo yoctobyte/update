@@ -196,11 +196,19 @@ HTML-fragment:
 _VALID_GEO_SCOPES = {"local", "region", "province", "national", "intl"}
 
 
-def rewrite_article(title: str, extracted_text: str, geo_ctx: dict) -> tuple[str, str, str, list[str]] | None:
+def rewrite_article(
+    title: str,
+    extracted_text: str,
+    geo_ctx: dict,
+    existing_topics: list[str] | None = None,
+) -> tuple[str, str, str, list[str]] | None:
     """
     Generate our own title, condense the article into one paragraph in Dutch,
-    classify the geographic scope, and suggest 1-3 topic labels.
+    classify the geographic scope, and assign/suggest topic labels.
     Returns (title, summary, geo_scope, topic_labels) or None on failure.
+
+    topic_labels may contain names from existing_topics (direct match) or
+    new free-form labels (will become SuggestedTopics).
 
     geo_ctx keys: town, province, region_towns (list), province_towns (list).
     """
@@ -212,11 +220,24 @@ def rewrite_article(title: str, extracted_text: str, geo_ctx: dict) -> tuple[str
     region_sample = ", ".join(region_towns[:5]) if region_towns else "—"
     province_sample = ", ".join(province_towns[:5]) if province_towns else "—"
 
+    if existing_topics:
+        topics_instruction = (
+            f'- "topics": kies ALLE toepasselijke onderwerpen uit deze lijst '
+            f'(meerdere zijn toegestaan en gewenst): {json.dumps(existing_topics, ensure_ascii=False)}. '
+            f'Als het artikel ook over iets gaat dat niet in de lijst staat, voeg dan een kort '
+            f'Nederlandstalig label toe. Geef een lege lijst als niets van toepassing is.'
+        )
+    else:
+        topics_instruction = (
+            '- "topics": een lijst van relevante Nederlandstalige onderwerpslabels '
+            '(meerdere zijn toegestaan; geef een lege lijst als niets van toepassing is)'
+        )
+
     prompt = f"""Je krijgt een nieuwsartikel. Geef je antwoord ALLEEN als JSON met vier sleutels:
 - "title": een eigen, neutrale Nederlandstalige kop (maximaal 10 woorden)
 - "summary": een samenvatting van één alinea in neutraal Nederlands (maximaal 150 woorden)
 - "geo_scope": geografische reikwijdte van het artikel — kies één van: "local", "region", "province", "national", "intl"
-- "topics": een lijst van 1 tot 3 korte Nederlandstalige onderwerpslabels (bijv. ["politiek", "verkeer", "duurzaamheid"])
+{topics_instruction}
 
 Richtlijnen voor geo_scope:
 - "local"    — artikel gaat primair over {town}
@@ -235,7 +256,7 @@ Tekst:
     result = _call(
         [{"role": "user", "content": prompt}],
         model=Config.OPENAI_MODEL_DEFAULT,
-        max_tokens=450,
+        max_tokens=500,
     )
     if not result:
         return None
@@ -250,9 +271,9 @@ Tekst:
             geo_scope = "national"
         raw_topics = data.get("topics") or []
         topic_labels = [
-            lbl.strip().lower() for lbl in raw_topics
+            lbl.strip() for lbl in raw_topics
             if isinstance(lbl, str) and lbl.strip()
-        ][:3]
+        ]
         return t, s, geo_scope, topic_labels
     except (json.JSONDecodeError, TypeError):
         logger.warning("rewrite_article returned invalid JSON: %s", result)
@@ -278,22 +299,26 @@ Geef alleen de samenvatting, geen inleiding of uitleg.
     )
 
 
-def suggest_topics(title: str, short_text: str, existing_topics: list[str]) -> list[str]:
+def suggest_topics(title: str, summary: str, existing_topics: list[str]) -> list[str]:
     """
-    Suggest relevant topic names from the existing list for a given article.
-    Returns a list of matching topic names.
+    Select ALL applicable topic names from existing_topics for a given article.
+    Returns a list of matching topic names (may be multiple).
     """
     if not existing_topics:
         return []
-    topics_str = ", ".join(existing_topics)
-    prompt = f"""Gegeven de volgende nieuwskop en samenvatting, welke van deze onderwerpen zijn van toepassing?
-Onderwerpen: {topics_str}
+    topics_json = json.dumps(existing_topics, ensure_ascii=False)
+    prompt = f"""Welke van de volgende onderwerpen zijn van toepassing op dit nieuwsartikel?
+Kies ALLE toepasselijke onderwerpen — een artikel kan over meerdere onderwerpen gaan.
+
+Beschikbare onderwerpen: {topics_json}
 
 Kop: {title}
-Samenvatting: {short_text[:300]}
+Samenvatting: {summary[:500]}
 
-Geef alleen de toepasselijke onderwerpen terug als JSON-lijst, bijv. ["politiek", "cultuur"].
-Geef alleen de JSON terug."""
+Geef de toepasselijke onderwerpen terug als JSON-lijst met exacte namen uit de lijst hierboven.
+Voorbeeld: ["Gezondheid", "Milieu"]
+Geef een lege lijst [] als geen enkel onderwerp van toepassing is.
+Geef alleen de JSON terug, geen uitleg."""
 
     result = _call(
         [{"role": "user", "content": prompt}],

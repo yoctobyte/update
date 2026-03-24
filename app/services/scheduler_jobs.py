@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def register_jobs(scheduler, app) -> None:
     from .fetcher import fetch_all_active
-    from .extractor import extract_all_pending
+    from .extractor import extract_all_pending, tag_untagged_articles
     from .embedder import embed_pending
     from .clustering import cluster_new_articles
     from .watcher import fetch_all_watched
@@ -48,6 +48,14 @@ def register_jobs(scheduler, app) -> None:
     scheduler.add_job(
         id="fetch_watched_urls",
         func=fetch_all_watched,
+        args=[app],
+        trigger="interval",
+        minutes=30,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="tag_untagged",
+        func=tag_untagged_articles,
         args=[app],
         trigger="interval",
         minutes=30,
