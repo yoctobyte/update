@@ -61,11 +61,4 @@ def register_jobs(scheduler, app) -> None:
         minutes=30,
         replace_existing=True,
     )
-    scheduler.add_job(
-        id="reload_templates",
-        func=lambda: app.jinja_env._cache.clear(),
-        trigger="interval",
-        seconds=30,
-        replace_existing=True,
-    )
     logger.info("Scheduler jobs registered.")

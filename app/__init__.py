@@ -1,9 +1,54 @@
 import json
-from pathlib import Path
 import os
+import threading
+import time
+from pathlib import Path
 from flask import Flask, request
+import jinja2
 from .config import Config
 from .extensions import db, migrate, csrf, limiter, scheduler
+
+
+class _ThrottledReloadLoader(jinja2.BaseLoader):
+    """Wraps another Jinja2 loader and throttles mtime checks to once per
+    `interval` seconds per template file. Within the interval, the cached
+    compiled template is served directly — no stat() call. After the interval
+    expires, a single stat() determines whether the file changed; only that
+    template is reloaded if it did."""
+
+    def __init__(self, wrapped: jinja2.BaseLoader, interval: int = 30):
+        self._wrapped = wrapped
+        self._interval = interval
+        self._lock = threading.Lock()
+        self._state: dict = {}  # filename -> {"mtime": float, "checked": float}
+
+    def get_source(self, environment, template):
+        source, filename, _ = self._wrapped.get_source(environment, template)
+        loader = self
+
+        def uptodate():
+            if not filename:
+                return True
+            now = time.monotonic()
+            with loader._lock:
+                entry = loader._state.get(filename)
+                if entry and now - entry["checked"] < loader._interval:
+                    return True  # within window — skip stat
+                try:
+                    mtime = os.path.getmtime(filename)
+                except OSError:
+                    return False
+                if entry is None:
+                    loader._state[filename] = {"mtime": mtime, "checked": now}
+                    return True
+                changed = mtime != entry["mtime"]
+                loader._state[filename] = {"mtime": mtime, "checked": now}
+                return not changed
+
+        return source, filename, uptodate
+
+    def list_templates(self):
+        return self._wrapped.list_templates()
 
 _BAD_SECRETS = {"dev-secret-change-me", "change-me", "secret", "admin", "password", ""}
 
@@ -81,6 +126,11 @@ def create_app(town: str = None) -> Flask:
         site_name=_town_cfg.get("site_name", "Lokaal Nieuws"),
         site_town=_town_cfg.get("site_town", active_town.title()),
     )
+
+    # Throttled template auto-reload: stat each file at most once per 30s;
+    # only recompile the template that actually changed.
+    app.jinja_env.auto_reload = True
+    app.jinja_env.loader = _ThrottledReloadLoader(app.jinja_env.loader, interval=30)
 
     # CLI commands
     from .cli.commands import register_commands
