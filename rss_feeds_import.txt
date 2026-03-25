@@ -1,0 +1,123 @@
+publisher | title | url
+# 2travel2 | 2travel2 | http://www.2travel2.nl/feed/rss.html
+# Adformatie | Adformatie | http://www.adformatie.nl/rss/nieuws.xml
+# Algemeen Dagblad | AD.nl - Alphen | https://www.ad.nl/alphen/rss.xml
+# Algemeen Dagblad | AD.nl - Amersfoort | https://www.ad.nl/amersfoort/rss.xml
+# Algemeen Dagblad | AD.nl - Amsterdam | https://www.ad.nl/amsterdam/rss.xml
+# Algemeen Dagblad | AD.nl - Apeldoorn | https://www.ad.nl/apeldoorn/rss.xml
+Algemeen Dagblad | AD.nl - Arnhem | https://www.ad.nl/arnhem/rss.xml
+# Algemeen Dagblad | AD.nl - Bergen op Zoom | https://www.ad.nl/bergen-op-zoom/rss.xml
+# Algemeen Dagblad | AD.nl - Binnenland | https://www.ad.nl/binnenland/rss.xml
+# Algemeen Dagblad | AD.nl - Breda | https://www.ad.nl/breda/rss.xml
+Algemeen Dagblad | AD.nl - Buitenland | https://www.ad.nl/buitenland/rss.xml
+# Algemeen Dagblad | AD.nl - Delft | https://www.ad.nl/delft/rss.xml
+# Algemeen Dagblad | AD.nl - Den Bosch | https://www.ad.nl/den-bosch/rss.xml
+# Algemeen Dagblad | AD.nl - Den Haag | https://www.ad.nl/den-haag/rss.xml
+# Algemeen Dagblad | AD.nl - Dordrecht | https://www.ad.nl/dordrecht/rss.xml
+# Algemeen Dagblad | AD.nl - Eindhoven | https://www.ad.nl/eindhoven/rss.xml
+# Algemeen Dagblad | AD.nl - Enschede | https://www.ad.nl/enschede/rss.xml
+# Algemeen Dagblad | AD.nl - Gouda | https://www.ad.nl/gouda/rss.xml
+# Algemeen Dagblad | AD.nl - Groene Hart | https://www.ad.nl/groene-hart/rss.xml
+# Algemeen Dagblad | AD.nl - Hengelo | https://www.ad.nl/hengelo/rss.xml
+# Algemeen Dagblad | AD.nl - Hoekse Waard | https://www.ad.nl/hoeksche-waard/rss.xml
+Algemeen Dagblad | AD.nl - Nijmegen | https://www.ad.nl/nijmegen/rss.xml
+Algemeen Dagblad | AD.nl - Rivierenland | https://www.ad.nl/rivierenland/rss.xml
+# Algemeen Dagblad | AD.nl - Roosendaal | https://www.ad.nl/roosendaal/rss.xml
+# Algemeen Dagblad | AD.nl - Rotterdam | https://www.ad.nl/rotterdam/rss.xml
+# Algemeen Dagblad | AD.nl - Sportwereld | https://www.ad.nl/sport/rss.xml
+# Algemeen Dagblad | AD.nl - Tilburg | https://www.ad.nl/tilburg/rss.xml
+# Algemeen Dagblad | AD.nl - Utrecht | https://www.ad.nl/utrecht/rss.xml
+# Algemeen Dagblad | AD.nl - Voorne-Putten | https://www.ad.nl/voorne-putten/rss.xml
+# Algemeen Dagblad | AD.nl - Westland | https://www.ad.nl/westland/rss.xml
+# Algemeen Dagblad | AD.nl - Woerden | https://www.ad.nl/woerden/rss.xml
+# Algemeen Dagblad | AD.nl - Zoetermeer | https://www.ad.nl/zoetermeer/rss.xml
+# Algemeen Dagblad | AD.nl - Zwolle | https://www.ad.nl/zwolle/rss.xml
+Algemeen Dagblad | Algemeen Dagblad | https://www.ad.nl/home/rss.xml
+# Algemeen Dagblad | Auto | https://www.ad.nl/auto/rss.xml
+# Algemeen Dagblad | Bizar | https://www.ad.nl/bizar/rss.xml
+# Algemeen Dagblad | Cultuur | https://www.ad.nl/cultuur/rss.xml
+# Algemeen Dagblad | Economie | https://www.ad.nl/economie/rss.xml
+# Algemeen Dagblad | Gezond | https://www.ad.nl/gezond/rss.xml
+Algemeen Dagblad | Politiek | https://www.ad.nl/politiek/rss.xml
+# Algemeen Dagblad | Reizen | https://www.ad.nl/reizen/rss.xml
+# Algemeen Dagblad | Show | https://www.ad.nl/show/rss.xml
+Algemeen Dagblad | Wetenschap | https://www.ad.nl/wetenschap/rss.xml
+Computable | Computable ICT Nieuws | http://feeds.feedburner.com/ComputableRss
+Festivalinfo | Festivalinfo | http://www.festivalinfo.nl/rss/FestivalinfoNewsRSS.xml
+Gezondheidsinfo | Gezondheidsinfo | https://www.gezondheidinfo.com/feed
+Nederlands Dagblad | Binnenland | http://www.nd.nl/rss/binnenland
+Nederlands Dagblad | Buitenland | http://www.nd.nl/rss/buitenland
+# Nederlands Dagblad | Commentaar | http://www.nd.nl/rss/commentaar
+# Nederlands Dagblad | Consument | http://www.nd.nl/rss/consument
+# Nederlands Dagblad | Cultuur | http://www.nd.nl/rss/cultuur
+# Nederlands Dagblad | Economie | http://www.nd.nl/rss/economie
+# Nederlands Dagblad | Geloof | https://www.nd.nl/Rss/7UZxNfzclROjiEdYoo8k_A==/Feed.lynkx
+# Nederlands Dagblad | Gratis nieuws | http://www.nd.nl/rss/gratis-nieuws
+# Nederlands Dagblad | Nieuws | http://www.nd.nl/rss/nieuws
+# Nederlands Dagblad | Opinie | http://www.nd.nl/rss/opinie
+Nederlands Dagblad | Politiek | http://www.nd.nl/rss/politiek
+# Nederlands Dagblad | Weekend | http://www.nd.nl/rss/weekend
+# Nieuws.nl | Achterklap | https://www.nu.nl/rss/Achterklap
+# Nieuws.nl | Film | https://www.nu.nl/rss/Film
+# Nieuws.nl | Muziek | https://www.nu.nl/rss/Muziek
+# Nieuws.nl | Opmerkelijk | https://www.nu.nl/rss/Opmerkelijk
+# Nieuws.nl | Sport | https://www.nu.nl/rss/Sport
+Nieuws.nl | Wetenschap | https://www.nu.nl/rss/Wetenschap
+Nieuwsblad Transport | Bedrijfsnieuws | http://www.nieuwsbladtransport.nl/DesktopModules/DCArticle/RSS.ashx?TargetPage=85&ChannelID=36
+# Nieuwsblad Transport | Binnenvaart | http://www.nieuwsbladtransport.nl/DesktopModules/DCArticle/RSS.ashx?TargetPage=85&ChannelID=5
+# Nieuwsblad Transport | Logistiek | http://www.nieuwsbladtransport.nl/DesktopModules/DCArticle/RSS.ashx?TargetPage=85&ChannelID=7
+# Nieuwsblad Transport | Luchtvracht | http://www.nieuwsbladtransport.nl/DesktopModules/DCArticle/RSS.ashx?TargetPage=85&ChannelID=3
+# Nieuwsblad Transport | Overheid | http://www.nieuwsbladtransport.nl/DesktopModules/DCArticle/RSS.ashx?TargetPage=85&ChannelID=9
+# Nieuwsblad Transport | Wegvervoer | http://www.nieuwsbladtransport.nl/DesktopModules/DCArticle/RSS.ashx?TargetPage=85&ChannelID=4
+# NOS | Nieuwsuur | http://feeds.nos.nl/nieuwsuuralgemeen
+# NOS | NOS Jeugdjournaal | http://feeds.nos.nl/jeugdjournaal
+# NOS | NOS Nieuws Teletekst | http://feeds.nos.nl/nosnieuws
+# NOS | NOS op 3 | http://feeds.nos.nl/nosop3
+# NOS | NOS Sport | http://feeds.nos.nl/nossportalgemeen
+# NOS | NOS Sport - Algemeen | http://feeds.feedburner.com/nossportalgemeen
+# NOS | NOS Sport - Schaatsen | http://feeds.nos.nl/nossportschaatsen
+# NOS | NOS Sport - Schaatsen Video's | http://feeds.nos.nl/nossportschaatsenvideo
+# NOS | NOS Sport - Tennis | http://feeds.nos.nl/nossporttennis
+# NOS | NOS Sport - Voetbal | http://feeds.nos.nl/nosvoetbal
+# NOS | NOS Sport - Wielrennen | http://feeds.nos.nl/nossportwielrennen
+NRC Handelsblad | Economie | http://www.nrc.nl/rss/economie
+NRC Handelsblad | Nieuws | http://feeds.feedburner.com/nrc/FmXV
+NRC Handelsblad | Snel nieuws | https://www.nrc.nl/rss/
+# NRC Handelsblad | Sport | http://www.nrc.nl/rss/sport
+Omroep Flevoland | Omroep Flevoland | http://www.omroepflevoland.nl/RSS/rss.aspx
+# PCM | PCM | http://feeds.feedburner.com/pcmweb_nieuws
+# RTL | Nieuws & Entertainment | https://www.rtl.nl/rss.xml
+RTL | Nieuws | https://www.rtl.nl/nieuws/rss.xml
+RTL | Binnenland | https://www.rtl.nl/nieuws/binnenland/rss.xml
+RTL | Buitenland | https://www.rtl.nl/nieuws/buitenland/rss.xml
+RTL | Politiek | https://www.rtl.nl/nieuws/politiek/rss.xml
+RTL | Economie | https://www.rtl.nl/nieuws/economie/rss.xml
+RTL | Tech | https://www.rtl.nl/nieuws/tech/rss.xml
+RTL | Klimaat | https://www.rtl.nl/nieuws/klimaat/rss.xml
+# RTL | Boulevard | https://www.rtl.nl/boulevard/rss.xml
+RTV Oost | RTV Oost | http://rss.rtvoost.nl/
+# Telegraaf | Autosport | https://www.telegraaf.nl/sport/autosport/rss
+Telegraaf | De Financiële Telegraaf | https://www.telegraaf.nl/financieel/nieuws/rss
+# Telegraaf | De Telegraaf: Vrouw | https://www.telegraaf.nl/vrouw/rss
+# Telegraaf | Gossip | https://www.telegraaf.nl/entertainment/gossip/rss
+# Telegraaf | Lifestyle | https://www.telegraaf.nl/lifestyle/rss
+ Telegraaf | Nieuwsportaal | https://www.telegraaf.nl/rss
+# Telegraaf | Telesport | https://www.telegraaf.nl/sport/rss
+# Telegraaf | Video overzicht | https://www.telegraaf.nl/video/rss
+Trouw | Buitenland | http://www.trouw.nl/nieuws/buitenland/rss.xml
+# Trouw | Cultuur | http://www.trouw.nl/nieuws/cultuur/rss.xml
+Trouw | Economie | http://www.trouw.nl/nieuws/economie/rss.xml
+# Trouw | Gezondheid | http://www.trouw.nl/nieuws/gezondheid/rss.xml
+# Trouw | Groen | http://www.trouw.nl/groen/rss.xml
+Trouw | Nederland | http://www.trouw.nl/nieuws/nederland/rss.xml
+Trouw | Religie & filosofie | http://www.trouw.nl/religie-filosofie/rss.xml
+# Volkskrant | Collumns & Opinie | https://www.volkskrant.nl/columns-opinie/rss.xml
+Volkskrant | Cultuur & Media | https://www.volkskrant.nl/cultuur-media/rss.xml
+Volkskrant | Economie | https://www.volkskrant.nl/economie/rss.xml
+# Volkskrant | Foto | https://www.volkskrant.nl/foto/rss.xml
+Volkskrant | Laatste nieuws | https://www.volkskrant.nl/voorpagina/rss.xml
+Volkskrant | Mensen | https://www.volkskrant.nl/mensen/rss.xml
+Volkskrant | Nieuws & Achtergrond | https://www.volkskrant.nl/nieuws-achtergrond/rss.xml
+# Volkskrant | Sport | https://www.volkskrant.nl/sport/rss.xml
+# Volkskrant | Video | https://www.volkskrant.nl/video/rss.xml
+Volkskrant | Wetenschap | https://www.volkskrant.nl/wetenschap/rss.xml

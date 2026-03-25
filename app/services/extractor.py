@@ -41,25 +41,40 @@ def extract_article(article: Article) -> bool:
 
     # ── RSS: self-contained, no URL fetching ──────────────────────────────────
     if source.type == "rss":
-        if article.extracted_text:
-            geo_ctx = Config.geo_context()
-            existing_topic_names = [t.name for t in Topic.query.order_by(Topic.name).all()]
-            result = rewrite_article(article.title, article.extracted_text, geo_ctx, existing_topic_names)
-            if result:
-                new_title, summary, geo_scope, topic_labels = result
-                article.title = new_title
-                article.summary = summary
-                if source.trusted_local:
-                    article.geo_scope = "local"
-                else:
-                    geo_scope = _verify_geo_scope(
-                        geo_scope, article.title,
-                        article.extracted_text or "", geo_ctx,
-                    )
-                    article.geo_scope = geo_scope
-                _apply_topic_labels(article, topic_labels)
-                db.session.commit()
-                return True
+        if not article.extracted_text:
+            # Feed provided no description — nothing to work with, skip permanently.
+            article.skip_extraction = True
+            db.session.commit()
+            return False
+
+        article.extract_attempts = (article.extract_attempts or 0) + 1
+        if article.extract_attempts >= _MAX_ATTEMPTS:
+            article.skip_extraction = True
+            db.session.commit()
+            logger.warning("Giving up on RSS article %s after %d attempts", article.url, article.extract_attempts)
+            return False
+        # Commit the attempt increment before the LLM call so we don't loop
+        # forever if the LLM repeatedly fails or returns None.
+        db.session.commit()
+
+        geo_ctx = Config.geo_context()
+        existing_topic_names = [t.name for t in Topic.query.order_by(Topic.name).all()]
+        result = rewrite_article(article.title, article.extracted_text, geo_ctx, existing_topic_names)
+        if result:
+            new_title, summary, geo_scope, topic_labels = result
+            article.title = new_title
+            article.summary = summary
+            if source.trusted_local:
+                article.geo_scope = "local"
+            else:
+                geo_scope = _verify_geo_scope(
+                    geo_scope, article.title,
+                    article.extracted_text or "", geo_ctx,
+                )
+                article.geo_scope = geo_scope
+            _apply_topic_labels(article, topic_labels)
+            db.session.commit()
+            return True
         return False
 
     # ── All other types: fetch URL and apply content rule ─────────────────────
@@ -70,11 +85,16 @@ def extract_article(article: Article) -> bool:
         logger.warning("Giving up on %s after %d attempts", article.url, article.extract_attempts)
         return False
 
+    # Commit the incremented attempt count NOW, before any long I/O or LLM calls.
+    # Without this, SQLAlchemy's autoflush opens a write transaction that stays
+    # open across _fetch_html + LLM calls (up to 30–60 s), blocking all other
+    # writers and causing "database is locked" errors.
+    db.session.commit()
+
     rules = _active_rules(source, purpose="content")
 
     html = _fetch_html(article.url, source)
     if html is None:
-        db.session.commit()  # persist incremented attempt count
         logger.warning("Could not fetch %s", article.url)
         return False
     # cache_html is now handled inside _fetch_html / browser.get_html
@@ -144,15 +164,49 @@ def extract_all_pending(app) -> None:
       try to upgrade to full article text
     Both are identified by absence of a summary (summary is only set after a successful
     full extraction or RSS rewrite — so missing summary = worth trying again).
+    If the queue is not empty after the batch, reschedules itself in 1 minute.
     """
+    from datetime import datetime, timedelta
+    from ..extensions import scheduler
+
     with app.app_context():
         articles = (
             Article.query
             .filter(Article.summary.is_(None), Article.skip_extraction == False)
+            .order_by(Article.id)
             .limit(50).all()
         )
+        succeeded = 0
         for article in articles:
-            extract_article(article)
+            if extract_article(article):
+                succeeded += 1
+
+        if len(articles) == 50:
+            if succeeded == 0:
+                # Full batch but zero progress — likely a systematic failure
+                # (LLM down, bad data, etc). Log loudly and fall back to the
+                # normal 5-minute interval instead of hammering every minute.
+                logger.warning(
+                    "extract_all_pending: processed %d articles, 0 succeeded — "
+                    "possible loop or systematic failure. Skipping aggressive reschedule.",
+                    len(articles),
+                )
+            else:
+                # Batch was full and we made progress — likely more remain;
+                # come back in 1 minute.
+                # Defer the modify_job call via a timer so it runs outside this job
+                # thread — calling scheduler.modify_job() from within a running job
+                # races with APScheduler's internal lock and can shut down the executor.
+                import threading
+                def _reschedule():
+                    try:
+                        scheduler.modify_job(
+                            "extract_pending",
+                            next_run_time=datetime.now() + timedelta(minutes=1),
+                        )
+                    except Exception:
+                        pass
+                threading.Timer(0.1, _reschedule).start()
 
 
 def tag_untagged_articles(app, batch: int = 30) -> int:
@@ -253,11 +307,31 @@ def extract_events_from_html(source: Source, html: str) -> list[dict]:
         return []
 
     results = []
+    failed = 0
     for el in elements:
         event_data = parse_event_html(str(el))
         if event_data:
-            results.append(event_data)
+            if not event_data.get("start_time"):
+                logger.warning(
+                    "Event parsed but missing start_time for '%s' (%s) — skipping",
+                    event_data.get("title", "?"), source.base_url,
+                )
+                failed += 1
+            else:
+                results.append(event_data)
+        else:
+            snippet = el.get_text(strip=True)[:80]
+            logger.warning(
+                "LLM could not parse event container for %s: %r",
+                source.base_url, snippet,
+            )
+            failed += 1
 
+    if failed:
+        logger.info(
+            "extract_events_from_html %s: %d parsed OK, %d failed",
+            source.base_url, len(results), failed,
+        )
     return results
 
 
@@ -438,7 +512,7 @@ def get_article_sample_html(source: Source) -> str | None:
 def get_cached_article_html(source: Source) -> str | None:
     """Return cached HTML for any article belonging to this source (full, untruncated)."""
     rendered = bool(getattr(source, "render_js", False))
-    articles = Article.query.filter_by(source_id=source.id).limit(5).all()
+    articles = Article.query.filter_by(source_id=source.id).order_by(Article.created_at.desc()).limit(5).all()
     for article in articles:
         html = _read_cache(article.url, rendered=rendered)
         if html is not None:

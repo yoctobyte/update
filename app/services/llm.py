@@ -34,8 +34,33 @@ def _strip_fences(text: str) -> str:
     return text.strip()
 
 
+def _sanitize(text: str) -> str:
+    """Strip null bytes and lone surrogates that make JSON bodies invalid."""
+    return text.replace("\x00", "").encode("utf-8", errors="replace").decode("utf-8")
+
+
+_VERBOSE = None
+
+def _is_verbose() -> bool:
+    global _VERBOSE
+    if _VERBOSE is None:
+        import os
+        _VERBOSE = os.environ.get("VERBOSE", "1") == "1"
+    return _VERBOSE
+
+
 def _call(messages: list[dict], model: str, max_tokens: int = 500) -> str | None:
     client = _get_client()
+    # Sanitize all message content upfront to avoid invalid JSON request bodies
+    messages = [
+        {**m, "content": _sanitize(m["content"])} if isinstance(m.get("content"), str) else m
+        for m in messages
+    ]
+    if _is_verbose():
+        prompt_preview = " | ".join(
+            m["content"][:120].replace("\n", " ") for m in messages if isinstance(m.get("content"), str)
+        )
+        logger.info("LLM → [%s] %s", model, prompt_preview)
     for attempt in range(3):
         try:
             response = client.chat.completions.create(
@@ -44,8 +69,17 @@ def _call(messages: list[dict], model: str, max_tokens: int = 500) -> str | None
                 max_tokens=max_tokens,
                 temperature=0.2,
             )
-            return response.choices[0].message.content.strip()
+            result = response.choices[0].message.content.strip()
+            if _is_verbose():
+                logger.info("LLM ← %s", result[:200].replace("\n", " "))
+            return result
         except Exception as exc:
+            # 400 Bad Request is a deterministic client error — retrying the same
+            # payload won't help.  Log at ERROR level and bail immediately.
+            status = getattr(exc, "status_code", None)
+            if status == 400:
+                logger.error("OpenAI bad request (skipping): %s", exc)
+                return None
             logger.warning("OpenAI call failed (attempt %d): %s", attempt + 1, exc)
             if attempt < 2:
                 time.sleep(2 ** attempt)

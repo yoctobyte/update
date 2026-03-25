@@ -78,6 +78,20 @@
 
   {% else %}{# content #}
     <h2>Geëxtraheerde tekst</h2>
+    <form method="get" action="{{ url_for('admin.rule_preview', rule_id=rule.id) }}"
+          style="display:flex;gap:0.4rem;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap">
+      <input type="text" name="sample_url"
+             value="{{ sample_url_used or '' }}"
+             placeholder="Plak artikel-URL om te testen"
+             style="width:28em">
+      <button type="submit" class="btn btn-secondary">Voorbeeld verversen</button>
+      {% if sample_url_used %}
+        <a href="{{ url_for('admin.rule_preview', rule_id=rule.id) }}" class="btn btn-secondary">✕ Wis URL</a>
+      {% endif %}
+    </form>
+    {% if sample_url_used %}
+      <p style="font-size:0.85em;color:#666">Voorbeeld gebaseerd op: <a href="{{ sample_url_used }}" target="_blank" rel="noopener">{{ sample_url_used }}</a></p>
+    {% endif %}
     {% if preview_text %}
       <div class="preview-text">{{ preview_text[:2000] }}</div>
       {% if preview_text|length > 2000 %}<p><em>… (ingekort)</em></p>{% endif %}

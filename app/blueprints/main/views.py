@@ -15,6 +15,41 @@ def _town_cfg() -> dict:
         return {}
 
 
+def _primary_only(query):
+    """Exclude URL duplicates: keep only the first-fetched article per URL.
+    When the same URL is picked up by multiple sources, only the lowest-id
+    copy appears in listings; the others are still reachable via direct link."""
+    duplicate = db.aliased(Article)
+    return query.filter(
+        ~db.session.query(duplicate)
+        .filter(duplicate.url == Article.url, duplicate.id < Article.id)
+        .exists()
+    )
+
+
+def _sources_by_url(articles) -> dict:
+    """Batch-query all active sources covering each URL on the page.
+    Returns dict[url -> list[Source]], with article.source first."""
+    from collections import defaultdict
+    urls = list({a.url for a in articles if a.url})
+    if not urls:
+        return {}
+    rows = (
+        db.session.query(Article.url, Source)
+        .join(Article.source)
+        .filter(Article.url.in_(urls))
+        .filter(Source.active == True)
+        .all()
+    )
+    result: dict = defaultdict(list)
+    seen: dict = defaultdict(set)
+    for url, source in rows:
+        if source.id not in seen[url]:
+            seen[url].add(source.id)
+            result[url].append(source)
+    return dict(result)
+
+
 # ── News ──────────────────────────────────────────────────────────────────────
 
 @bp.route("/")
@@ -34,7 +69,7 @@ def index():
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
@@ -43,6 +78,7 @@ def index():
         pagination=pagination,
         topics=topics,
         active_topic=active_topic,
+        sources_by_url=_sources_by_url(pagination.items),
     )
 
 
@@ -101,7 +137,7 @@ def regio():
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
@@ -111,6 +147,7 @@ def regio():
         topics=topics,
         active_topic=active_topic,
         region_towns=region_towns,
+        sources_by_url=_sources_by_url(pagination.items),
     )
 
 
@@ -132,7 +169,7 @@ def provincie():
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
@@ -141,6 +178,7 @@ def provincie():
         pagination=pagination,
         topics=topics,
         active_topic=active_topic,
+        sources_by_url=_sources_by_url(pagination.items),
     )
 
 
@@ -162,7 +200,7 @@ def nationaal():
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
@@ -171,6 +209,7 @@ def nationaal():
         pagination=pagination,
         topics=topics,
         active_topic=active_topic,
+        sources_by_url=_sources_by_url(pagination.items),
     )
 
 
@@ -192,7 +231,7 @@ def internationaal():
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
@@ -201,6 +240,7 @@ def internationaal():
         pagination=pagination,
         topics=topics,
         active_topic=active_topic,
+        sources_by_url=_sources_by_url(pagination.items),
     )
 
 
@@ -221,7 +261,7 @@ def alles():
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
@@ -230,6 +270,7 @@ def alles():
         pagination=pagination,
         topics=topics,
         active_topic=active_topic,
+        sources_by_url=_sources_by_url(pagination.items),
     )
 
 
@@ -242,7 +283,7 @@ def stories():
         Story.query
         .filter_by(status="active")
         .order_by(Story.updated_at.desc())
-        .paginate(page=page, per_page=20, error_out=False)
+        .paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     )
     return render_template("main/stories.html", pagination=pagination)
 
@@ -258,16 +299,16 @@ def story_detail(story_id):
 
 @bp.route("/agenda")
 def events():
-    from datetime import datetime, timezone
+    from datetime import datetime
     page = request.args.get("page", 1, type=int)
     topic_id = request.args.get("topic", type=int)
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()  # naive UTC — matches how SQLite stores datetimes
 
     query = Event.query.filter(Event.start_time >= now).order_by(Event.start_time)
     if topic_id:
         query = query.filter(Event.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=20, error_out=False)
+    pagination = query.paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
@@ -294,7 +335,7 @@ def opinie_list():
         Opinion.query
         .filter_by(status="published")
         .order_by(Opinion.published_at.desc())
-        .paginate(page=page, per_page=20, error_out=False)
+        .paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
     )
     return render_template("main/opinie_list.html", pagination=pagination)
 

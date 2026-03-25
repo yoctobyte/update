@@ -31,12 +31,14 @@
 
       <div class="article-footer">
         <div class="article-sources">
+          {% for src in sources_by_url.get(article.url, [article.source]) %}
           <a href="{{ article.url }}" target="_blank" rel="noopener"
-             title="{{ article.source.name }}" class="source-favicon-link">
-            <img src="{{ url_for('main.source_favicon', source_id=article.source.id) }}"
-                 class="source-favicon" alt="{{ article.source.name }}"
+             title="{{ src.name }}" class="source-favicon-link">
+            <img src="{{ url_for('main.source_favicon', source_id=src.id) }}"
+                 class="source-favicon" alt="{{ src.name }}"
                  width="16" height="16" loading="lazy">
           </a>
+          {% endfor %}
           <time class="article-date">
             {%- if article.published_at -%}
               {{ article.published_at.strftime('%-d %b %H:%M') }}

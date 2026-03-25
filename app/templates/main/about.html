@@ -4,56 +4,35 @@
 
 <article class="prose-page">
 
-  <h1>Over De Wageningse Graaf</h1>
+  <h1>De Wageningse Graaf</h1>
 
   <p class="lead">
-    De Wageningse Graaf is een onafhankelijk, lokaal nieuwsoverzicht voor Wageningen en omgeving.
-    Geen redactie op de loonlijst, geen adverteerders die de toon bepalen — alleen nieuws uit de buurt.
+    Onafhankelijk lokaal nieuwsoverzicht voor Wageningen en omgeving.
   </p>
-
-  {# ── Onze aanpak ────────────────────────────────────────────────────────── #}
-  <h2>Onze aanpak</h2>
-  <ul>
-    <li><strong>Menselijk gecureerd</strong> — een algoritme verzamelt, een mens beslist wat telt.</li>
-    <li><strong>Geen advertenties</strong> — nul. Niet nu, niet straks.</li>
-    <li><strong>Lokale sponsors</strong> — wie ons steunt, doet dat uit betrokkenheid bij Wageningen, niet voor clicks.</li>
-    <li><strong>Open opinie</strong> — iedereen mag een stuk insturen. We publiceren na een korte redactionele check.</li>
-  </ul>
+  
+  {# ── Wie wat waar ─────────────────────────────────────────────────────────────── #}
+  <h2>Wie - wat - waarom</h2>
+  <p>
+    Deze website is het werk van een enthousiaste Wageninger, ontstaan uit de behoefte van een overzichtelijke en prikkelarme nieuwsbron, met aandacht voor lokaal en regionaal nieuws.
+  </p>
+  <p>Het heeft tevens een archieffunctie - een plek waar nieuws terug te vinden is. E.e.a. is nog in aktieve ontwikkeling.</p>
+  <p>We verzamelen nieuws uit vele bronnen, om nieuws te vinden over ons stadje. De rest van de sortering is eigenlijk bijvangst.</p>
 
   {# ── Cookies ─────────────────────────────────────────────────────────────── #}
-  <h2>Waarom geen cookiemelding?</h2>
+  <h2>Waarom geen cookiemelding ?</h2>
   <p>
     U ziet geen cookiebanner omdat we er geen nodig hebben.
-    De Wageningse Graaf plaatst <strong>uitsluitend functionele cookies</strong>:
+    We plaatsen uitsluitend functionele cookies voor: uw gekozen kleurenthema of lettergrootte of als u ingelogd bent als beheerder.
   </p>
-  <ul>
-    <li><code>theme</code> — uw gekozen kleurenthema (opgeslagen in uw browser, niet op onze server)</li>
-    <li><code>font</code> — uw gekozen lettergrootte (idem)</li>
-    <li><code>session</code> — alleen aanwezig als u ingelogd bent als beheerder</li>
-  </ul>
   <p>
     Deze cookies worden <em>niet</em> gebruikt voor tracking, profilering of advertenties.
     Ze verlaten uw browser nooit in de richting van derden.
     Onder de AVG/GDPR is voor uitsluitend functionele cookies geen toestemming vereist.
   </p>
 
-  {# ── Sponsors ────────────────────────────────────────────────────────────── #}
-  {% if sponsors %}
-  <h2>Onze sponsors</h2>
-  <p>Deze Wageningse bedrijven en organisaties maken dit platform mogelijk:</p>
-  <ul class="sponsor-list">
-    {% for s in sponsors %}
-    <li>
-      {% if s.url %}
-        <a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.name }}</a>
-      {% else %}
-        {{ s.name }}
-      {% endif %}
-      {% if s.tagline %}<span class="sponsor-tagline">— {{ s.tagline }}</span>{% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
+<h2>Ons businessmodel ?</h2>
+<p>Liefdewerk, oud papier. We staan wellicht open voor sponsors. De site prikkelarm houden is een primair doel - en advertenties vallen daar, gegeven hun aard, bijna per definitie buiten.</p>
+
 
   {# ── Contact ─────────────────────────────────────────────────────────────── #}
   <h2 id="contact">Contact</h2>

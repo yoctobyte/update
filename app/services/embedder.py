@@ -23,9 +23,44 @@ def _get_model():
                 from sentence_transformers import SentenceTransformer
                 torch.set_num_threads(2)
                 logger.info("Loading embedding model %s...", Config.EMBEDDING_MODEL)
-                _model = SentenceTransformer(Config.EMBEDDING_MODEL)
+                try:
+                    # Prefer local cache — avoids HuggingFace HEAD requests on every startup
+                    _model = SentenceTransformer(Config.EMBEDDING_MODEL, local_files_only=True)
+                except RuntimeError as exc:
+                    if "interpreter shutdown" in str(exc):
+                        logger.warning("Embedding model load aborted — interpreter shutting down.")
+                        return None
+                    raise
+                except Exception:
+                    # Not cached yet — download once, then local_files_only works next time
+                    logger.info("Model not in local cache, downloading...")
+                    try:
+                        _model = SentenceTransformer(Config.EMBEDDING_MODEL)
+                    except RuntimeError as exc:
+                        if "interpreter shutdown" in str(exc):
+                            logger.warning("Embedding model load aborted — interpreter shutting down.")
+                            return None
+                        raise
                 logger.info("Embedding model loaded.")
     return _model
+
+
+def preload_model() -> None:
+    """Load the embedding model in the background at startup so the first
+    embed_pending job doesn't race with interpreter shutdown machinery.
+    Skipped in the Werkzeug reloader parent process (which never serves requests)."""
+    import os
+    # WERKZEUG_RUN_MAIN is set only in the child process that actually serves.
+    # The parent reloader process should not load the model — it exits on file changes.
+    if os.environ.get("FLASK_DEBUG") == "1" and not os.environ.get("WERKZEUG_RUN_MAIN"):
+        return
+
+    def _load():
+        try:
+            _get_model()
+        except Exception as exc:
+            logger.warning("Background model preload failed: %s", exc)
+    threading.Thread(target=_load, name="embedder-preload", daemon=True).start()
 
 
 def _to_bytes(vector) -> bytes:
@@ -61,6 +96,9 @@ def embed_pending(app, batch_size: int = 16) -> int:
                 return 0
 
             model = _get_model()
+            if model is None:
+                logger.warning("Embedding model unavailable, skipping batch.")
+                return 0
             texts = [
                 (a.short_text or a.extracted_text or a.title)[:512]
                 for a in articles

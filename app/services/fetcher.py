@@ -70,8 +70,19 @@ def fetch_source(source: Source) -> int:
         logger.info("Fetched %s: %d new items", source.name, new_count)
         return new_count
     except Exception as exc:
-        logger.error("Failed to fetch source %s: %s", source.name, exc)
-        _update_source_status(source, success=False)
+        # Roll back any broken transaction before touching the session again.
+        # Without this, accessing source.name (lazy load) on a session whose
+        # transaction was rolled back raises PendingRollbackError.
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        source_name = source.name if source else "unknown"
+        logger.error("Failed to fetch source %s: %s", source_name, exc)
+        try:
+            _update_source_status(source, success=False)
+        except Exception:
+            pass
         return 0
 
 
@@ -304,10 +315,21 @@ def _fetch_agenda(source: Source) -> int:
     """
     Fetch an agenda/event listing page and extract structured Event objects.
     Deduplicates by title + start_time.
+    Skips LLM extraction entirely when the page HTML hasn't changed since last fetch.
     """
+    import hashlib
     from ..services import extractor as ext
 
     html = _get_html(source.base_url, source)
+    if not html:
+        return 0
+
+    page_hash = hashlib.sha256(html.encode("utf-8", errors="replace")).hexdigest()
+    if source.last_content_hash == page_hash:
+        logger.debug("Agenda page unchanged for %s — skipping LLM", source.base_url)
+        return 0
+    source.last_content_hash = page_hash
+    db.session.commit()
 
     event_dicts = ext.extract_events_from_html(source, html)
     if not event_dicts:
@@ -341,15 +363,33 @@ def _fetch_agenda(source: Source) -> int:
             except (ImportError, Exception):
                 end_time = None
 
-        # Dedup by title + start_time
-        existing = Event.query.filter_by(title=title, start_time=start_time).first()
+        # Dedup by title + start_time.
+        # Use no_autoflush so pending session adds don't trigger an INSERT
+        # before we've finished building the batch — avoids "database is locked"
+        # when another thread holds the write lock at this exact moment.
+        with db.session.no_autoflush:
+            existing = Event.query.filter_by(title=title, start_time=start_time).first()
         if existing:
             continue
+
+        # location may be a dict (JSON-LD structured data) — flatten to string
+        raw_loc = ev_data.get("location")
+        if isinstance(raw_loc, dict):
+            addr = raw_loc.get("address", raw_loc)
+            if isinstance(addr, dict):
+                raw_loc = ", ".join(filter(None, [
+                    addr.get("streetAddress"), addr.get("addressLocality"),
+                    addr.get("addressCountry"),
+                ]))
+            else:
+                raw_loc = str(addr)
+        elif isinstance(raw_loc, list):
+            raw_loc = "; ".join(str(x) for x in raw_loc if x)
 
         event = Event(
             title=title,
             description=ev_data.get("description"),
-            location=ev_data.get("location"),
+            location=raw_loc or None,
             start_time=start_time,
             end_time=end_time,
             organizer=ev_data.get("organizer"),

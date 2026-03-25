@@ -75,6 +75,13 @@ def render_with_playwright(url: str, cookie_accept_selector: str | None = None) 
             )
             page.goto(url, wait_until="domcontentloaded", timeout=15_000)
 
+            # Best-effort: wait for AJAX/XHR to finish so dynamically loaded
+            # content (e.g. article lists fetched after DOMContentLoaded) is present.
+            try:
+                page.wait_for_load_state("networkidle", timeout=5_000)
+            except PWTimeout:
+                pass  # Proceed with whatever loaded so far
+
             if cookie_accept_selector:
                 try:
                     page.click(cookie_accept_selector, timeout=5_000)

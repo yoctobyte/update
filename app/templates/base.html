@@ -49,12 +49,38 @@
               title="Hippie" aria-pressed="false">✿</button>
     </div>
 
+    <div class="util-group util-nav-group">
+      <button class="util-btn util-nav-btn" id="nav-prev" title="Vorige pagina" aria-label="Vorige pagina">&#8249;</button>
+      <button class="util-btn util-nav-btn" id="nav-next" title="Volgende pagina" aria-label="Volgende pagina">&#8250;</button>
+    </div>
+
     <div class="util-group util-admin-group">
       <a href="{{ url_for('admin.dashboard') }}" class="util-btn util-admin"
          title="Beheer">⚙</a>
     </div>
 
   </div>
+  <script>
+    (function() {
+      var NAV_PER_PAGE = 25;
+      function getParam(name, def) {
+        var p = new URLSearchParams(window.location.search);
+        return p.has(name) ? parseInt(p.get(name), 10) || def : def;
+      }
+      function navTo(page) {
+        var p = new URLSearchParams(window.location.search);
+        p.set('page', Math.max(1, page));
+        p.set('per_page', NAV_PER_PAGE);
+        window.location.search = p.toString();
+      }
+      document.getElementById('nav-prev').addEventListener('click', function() {
+        navTo(getParam('page', 1) - 1);
+      });
+      document.getElementById('nav-next').addEventListener('click', function() {
+        navTo(getParam('page', 1) + 1);
+      });
+    })();
+  </script>
 
   {# ── Site header ──────────────────────────────────────────────────────────── #}
   <header class="site-header">
@@ -84,6 +110,8 @@
     <nav class="site-nav" aria-label="Hoofdnavigatie">
       <a href="{{ url_for('main.index') }}"
          {% if request.endpoint == 'main.index' %}class="active"{% endif %}>{{ site_town }}</a>
+      <a href="{{ url_for('main.alles') }}"
+         {% if request.endpoint == 'main.alles' %}class="active"{% endif %}>Alles</a>
       <a href="{{ url_for('main.regio') }}"
          {% if request.endpoint == 'main.regio' %}class="active"{% endif %}>Regio</a>
       <a href="{{ url_for('main.provincie') }}"
@@ -98,8 +126,6 @@
          {% if request.endpoint and 'event' in request.endpoint %}class="active"{% endif %}>Agenda</a>
       <a href="{{ url_for('main.opinie_list') }}"
          {% if request.endpoint and 'opinie' in request.endpoint %}class="active"{% endif %}>Opinie</a>
-      <a href="{{ url_for('main.alles') }}"
-         {% if request.endpoint == 'main.alles' %}class="active"{% endif %}>Alles</a>
       <a href="{{ url_for('main.about') }}"
          {% if request.endpoint == 'main.about' %}class="active"{% endif %}>Over ons</a>
     </nav>

@@ -1,5 +1,6 @@
 """APScheduler job definitions."""
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from ..config import Config
@@ -28,16 +29,26 @@ def _check_templates(app) -> None:
             changed = True
 
     if changed:
-        app.jinja_env._cache.clear()
+        app.jinja_env.cache.clear()
         logger.info("Template cache cleared (file change detected)")
 
 
 def register_jobs(scheduler, app) -> None:
     from .fetcher import fetch_all_active
     from .extractor import extract_all_pending, tag_untagged_articles
-    from .embedder import embed_pending
+    from .embedder import embed_pending, preload_model
     from .clustering import cluster_new_articles
     from .watcher import fetch_all_watched
+
+    # Pre-warm the embedding model in a background thread so it's ready before
+    # the first embed_pending job fires — avoids loading during interpreter shutdown.
+    preload_model()
+
+    # Jobs with next_run_time=now run at startup to drain any backlog.
+    # misfire_grace_time=60 prevents APScheduler from skipping them when
+    # startup takes longer than the default 1-second grace window.
+    now = datetime.now()
+    STARTUP_GRACE = 60  # seconds
 
     scheduler.add_job(
         id="fetch_all_sources",
@@ -53,6 +64,8 @@ def register_jobs(scheduler, app) -> None:
         args=[app],
         trigger="interval",
         minutes=5,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
     scheduler.add_job(
@@ -61,6 +74,8 @@ def register_jobs(scheduler, app) -> None:
         args=[app],
         trigger="interval",
         minutes=Config.EMBED_INTERVAL_MINUTES,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
     scheduler.add_job(
@@ -69,6 +84,8 @@ def register_jobs(scheduler, app) -> None:
         args=[app],
         trigger="interval",
         minutes=Config.CLUSTER_INTERVAL_MINUTES,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
     scheduler.add_job(
@@ -85,6 +102,8 @@ def register_jobs(scheduler, app) -> None:
         args=[app],
         trigger="interval",
         minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
     scheduler.add_job(
@@ -93,6 +112,7 @@ def register_jobs(scheduler, app) -> None:
         args=[app],
         trigger="interval",
         seconds=30,
+        next_run_time=now,
         replace_existing=True,
     )
     logger.info("Scheduler jobs registered.")

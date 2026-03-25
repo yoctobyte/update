@@ -81,9 +81,12 @@ def fetch_all_watched(app) -> None:
         entries = WatchedURL.query.filter_by(active=True).all()
         fetched = 0
         for entry in entries:
+            last = entry.last_fetched_at
+            if last is not None and last.tzinfo is None:
+                last = last.replace(tzinfo=timezone.utc)
             due = (
-                entry.last_fetched_at is None
-                or (now - entry.last_fetched_at) >= timedelta(hours=entry.fetch_interval_hours)
+                last is None
+                or (now - last) >= timedelta(hours=entry.fetch_interval_hours)
             )
             if not due:
                 continue

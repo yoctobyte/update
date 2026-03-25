@@ -280,8 +280,9 @@ def rule_preview(rule_id):
     preview_text = None
     preview_links = None
     preview_events_count = None
-
     combined_links = None
+    sample_url_used = None
+
     if rule.rule_definition:
         if rule.rule_purpose == "links":
             html = extractor.get_listing_html(source)
@@ -308,7 +309,16 @@ def rule_preview(rule_id):
                 elements = extractor.apply_events_rule(rule, html)
                 preview_events_count = len(elements)
         else:
-            html = extractor.get_article_sample_html(source)
+            # content: use ?sample_url= if provided, else auto-select
+            sample_url_used = request.args.get("sample_url", "").strip() or None
+            if sample_url_used:
+                html = extractor._fetch_html(sample_url_used, source)
+                if not html:
+                    flash(f"Kon de opgegeven URL niet ophalen: {sample_url_used}", "error")
+                    sample_url_used = None
+                    html = extractor.get_article_sample_html(source)
+            else:
+                html = extractor.get_article_sample_html(source)
             if html:
                 preview_text = extractor.apply_content_rule(rule, html)
 
@@ -320,6 +330,7 @@ def rule_preview(rule_id):
         preview_links=preview_links,
         combined_links=combined_links,
         preview_events_count=preview_events_count,
+        sample_url_used=sample_url_used,
     )
 
 
@@ -438,7 +449,8 @@ def rule_generate(rule_id):
         flash("Regel gegenereerd — controleer het voorbeeld.", "info")
     else:
         flash("AI kon geen regel genereren.", "error")
-    return redirect(url_for("admin.rule_preview", rule_id=rule.id))
+    return redirect(url_for("admin.rule_preview", rule_id=rule.id,
+                            sample_url=sample_url_used or ""))
 
 
 # ── Story merge queue ─────────────────────────────────────────────────────────
@@ -844,6 +856,7 @@ def rule_suggest_heuristic(rule_id):
         flash("Kan een goedgekeurde regel niet overschrijven. Gebruik '+ Nieuwe variant genereren'.", "error")
         return redirect(url_for("admin.rule_preview", rule_id=rule.id))
 
+    sample_url = ""
     if rule.rule_purpose in ("links", "events"):
         html = extractor.get_listing_html(source)
     else:
@@ -867,7 +880,8 @@ def rule_suggest_heuristic(rule_id):
         flash("Heuristisch gegenereerd — controleer het voorbeeld en pas zo nodig aan.", "info")
     else:
         flash("Geen duidelijk patroon gevonden. Voer de selector handmatig in.", "error")
-    return redirect(url_for("admin.rule_preview", rule_id=rule.id))
+    return redirect(url_for("admin.rule_preview", rule_id=rule.id,
+                            sample_url=sample_url or ""))
 
 
 @bp.route("/bronnen/<int:source_id>/heuristiek-nieuw/<purpose>", methods=["POST"])

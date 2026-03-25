@@ -234,6 +234,8 @@ h1, h2, h3, h4 {
 #tts-btn.active { background: #dc2626; color: #fff; border-color: #dc2626; }
 
 .util-admin { font-size: 0.85rem; }
+.util-nav-btn { font-size: 1.1rem; padding: 0 6px; }
+.util-nav-group { margin-left: auto !important; border-left: none; }
 
 
 /* ── 4. Site header & nav ────────────────────────────────────────────────── */

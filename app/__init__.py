@@ -86,11 +86,31 @@ def create_app(town: str = None) -> Flask:
     from .cli.commands import register_commands
     register_commands(app)
 
-    # Start scheduler (not in testing)
-    if not app.config.get("TESTING"):
+    # Start scheduler (not in testing, not in Werkzeug reloader parent process).
+    # In debug mode Werkzeug forks: the parent watches files and the child serves.
+    # Both processes import the app, so without this guard the scheduler (and
+    # heavy background jobs like model loading) would run twice.
+    _is_reloader_parent = (
+        os.environ.get("FLASK_DEBUG") == "1"
+        and not os.environ.get("WERKZEUG_RUN_MAIN")
+    )
+    if not app.config.get("TESTING") and not os.environ.get("TESTING") and not _is_reloader_parent:
+        import atexit
         from .services.scheduler_jobs import register_jobs
         register_jobs(scheduler, app)
         if not scheduler.running:
             scheduler.start()
+
+            def _shutdown_scheduler():
+                try:
+                    scheduler.pause()   # stop dispatching jobs immediately
+                except Exception:
+                    pass
+                try:
+                    scheduler.shutdown(wait=False)
+                except Exception:
+                    pass
+
+            atexit.register(_shutdown_scheduler)
 
     return app
