@@ -1,7 +1,7 @@
 import json
 from flask import render_template, request, abort, redirect, url_for, flash, current_app, send_file, Response
 from . import bp
-from ...models import Article, Story, Event, Topic, Opinion, ContactMessage, Source
+from ...models import Article, Story, Event, Topic, Opinion, ContactMessage, Source, RedactionalPost
 from ...extensions import db, limiter
 from ...config import Config
 
@@ -26,6 +26,59 @@ _SECTION_FLAG = {
 
 
 TOPIC_SIDEBAR_TOP = 7
+
+_PIN_SECTION = {
+    "local":     "pin_lokaal",
+    "region":    "pin_regio",
+    "province":  "pin_provincie",
+    "national":  "pin_nationaal",
+    "intl":      "pin_intl",
+    "alles":     "pin_alles",
+    "frontpage": "pin_frontpage",
+}
+
+
+def _inject_pins(articles, section: str, page: int) -> list:
+    """Insert active pinned RedactionalPosts into article list (page 1 only).
+
+    Posts are inserted at their pin_position (0-indexed). Multiple posts at the
+    same position stack in published_at order; each insertion shifts subsequent
+    positions by one.
+    """
+    from datetime import datetime, timezone
+
+    if page != 1:
+        return list(articles)
+
+    flag = _PIN_SECTION.get(section)
+    if not flag:
+        return list(articles)
+
+    now = datetime.now(timezone.utc)
+    pins = (
+        RedactionalPost.query
+        .filter(
+            getattr(RedactionalPost, flag) == True,
+            RedactionalPost.pinned == True,
+            db.or_(
+                RedactionalPost.pin_expires_at.is_(None),
+                RedactionalPost.pin_expires_at > now,
+            ),
+        )
+        .order_by(RedactionalPost.pin_position, RedactionalPost.published_at.desc())
+        .all()
+    )
+
+    if not pins:
+        return list(articles)
+
+    result = list(articles)
+    offset = 0
+    for post in pins:
+        pos = min((post.pin_position or 0) + offset, len(result))
+        result.insert(pos, post)
+        offset += 1
+    return result
 
 
 def _topic_groups(section: str, active_topic=None):
@@ -177,6 +230,7 @@ def _lokaal_response():
         active_topic=active_topic,
         section_endpoint="main.lokaal",
         sources_by_url=_sources_by_url(pagination.items),
+        page_items=_inject_pins(pagination.items, "local", page),
     )
 
 
@@ -209,6 +263,7 @@ def index():
             articles=articles,
             topics=topics,
             sources_by_url=_sources_by_url(articles),
+            page_items=_inject_pins(articles, "frontpage", 1),
         )
     return _lokaal_response()
 
@@ -290,6 +345,7 @@ def regio():
         section_endpoint="main.regio",
         region_towns=region_towns,
         sources_by_url=_sources_by_url(pagination.items),
+        page_items=_inject_pins(pagination.items, "region", page),
     )
 
 
@@ -324,6 +380,7 @@ def provincie():
         active_topic=active_topic,
         section_endpoint="main.provincie",
         sources_by_url=_sources_by_url(pagination.items),
+        page_items=_inject_pins(pagination.items, "province", page),
     )
 
 
@@ -358,6 +415,7 @@ def nationaal():
         active_topic=active_topic,
         section_endpoint="main.nationaal",
         sources_by_url=_sources_by_url(pagination.items),
+        page_items=_inject_pins(pagination.items, "national", page),
     )
 
 
@@ -392,6 +450,7 @@ def internationaal():
         active_topic=active_topic,
         section_endpoint="main.internationaal",
         sources_by_url=_sources_by_url(pagination.items),
+        page_items=_inject_pins(pagination.items, "intl", page),
     )
 
 
@@ -425,24 +484,32 @@ def alles():
         active_topic=active_topic,
         section_endpoint="main.alles",
         sources_by_url=_sources_by_url(pagination.items),
+        page_items=_inject_pins(pagination.items, "alles", page),
     )
 
 
-# ── Redactie (was: Verhalen) ───────────────────────────────────────────────────
+# ── Redactie — editorial posts ────────────────────────────────────────────────
 
 @bp.route("/redactie")
 def redactie():
     page = request.args.get("page", 1, type=int)
     pagination = (
-        Story.query
-        .filter_by(status="active")
-        .order_by(Story.updated_at.desc())
-        .paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
+        RedactionalPost.query
+        .order_by(RedactionalPost.published_at.desc())
+        .paginate(page=page, per_page=25, error_out=False)
     )
-    return render_template("main/stories.html", pagination=pagination)
+    return render_template("main/redactie.html", pagination=pagination)
 
 
-@bp.route("/redactie/<int:story_id>")
+@bp.route("/redactie/<int:post_id>")
+def redactie_post(post_id):
+    post = RedactionalPost.query.get_or_404(post_id)
+    return render_template("main/redactie_post.html", post=post)
+
+
+# ── Stories (dormant — kept for backward compat / future use) ─────────────────
+
+@bp.route("/redactie/verhaal/<int:story_id>")
 def redactie_detail(story_id):
     story = Story.query.get_or_404(story_id)
     articles = sorted(story.articles, key=lambda a: a.published_at or a.created_at, reverse=True)
@@ -649,6 +716,19 @@ def contact_submit():
                            contact=cfg.get("contact", {}),
                            sponsors=cfg.get("sponsors", []),
                            form_sent=True)
+
+
+# ── Uploaded images ───────────────────────────────────────────────────────────
+
+@bp.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    """Serve editorial post images from the uploads directory."""
+    from pathlib import Path
+    safe_name = Path(filename).name  # strip any path traversal
+    target = Config.uploads_path() / safe_name
+    if not target.exists():
+        abort(404)
+    return send_file(target)
 
 
 # ── Favicon proxy ─────────────────────────────────────────────────────────────

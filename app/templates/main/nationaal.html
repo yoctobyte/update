@@ -7,7 +7,10 @@
 </div>
 
 <div class="article-list">
-  {% for article in pagination.items %}
+  {% for article in page_items %}
+    {% if article.is_redactional_post %}
+      {% include 'main/_redactional_card.html' %}
+    {% else %}
     <article class="article-card">
       <h2 class="article-title">
         <a href="{{ url_for('main.article_detail', article_id=article.id) }}">{{ article.title }}</a>
@@ -19,7 +22,6 @@
           <p class="article-snippet">{{ desc }}</p>
         </a>
       {% endif %}
-
 
       <div class="article-footer">
         <div class="article-sources">
@@ -43,6 +45,7 @@
            class="ext-indicator" title="Lees op {{ article.source.name }}">↗</a>
       </div>
     </article>
+    {% endif %}
   {% else %}
     <p>Nog geen nationaal nieuws gevonden.</p>
   {% endfor %}

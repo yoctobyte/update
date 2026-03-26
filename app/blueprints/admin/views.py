@@ -10,7 +10,7 @@ from . import bp
 from ...extensions import db, limiter
 from ...models import (
     Source, ExtractionRule, Story, StoryMergeLog,
-    Article, Topic, Event, SuggestedTopic, SiteSetting
+    Article, Topic, Event, SuggestedTopic, SiteSetting, RedactionalPost
 )
 from ...services import clustering, extractor, llm
 
@@ -815,6 +815,143 @@ def event_delete(event_id):
     db.session.delete(event)
     db.session.commit()
     return redirect(url_for("admin.events"))
+
+
+# ── Redactional posts ─────────────────────────────────────────────────────────
+
+_TOPIC_SUGGESTIONS = ["nieuws", "column", "foto", "opinie"]
+_PIN_SECTIONS = [
+    ("pin_frontpage", "Voorpagina"),
+    ("pin_lokaal",    "Lokaal"),
+    ("pin_alles",     "Alles"),
+    ("pin_regio",     "Regio"),
+    ("pin_provincie", "Provincie"),
+    ("pin_nationaal", "Nationaal"),
+    ("pin_intl",      "Internationaal"),
+]
+_ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+
+
+def _save_upload(file):
+    """Save uploaded image; return filename or None."""
+    import uuid
+    from pathlib import Path
+    from ...config import Config
+    if not file or not file.filename:
+        return None
+    ext = Path(file.filename).suffix.lower()
+    if ext not in _ALLOWED_IMAGE_EXT:
+        return None
+    filename = f"{uuid.uuid4().hex}{ext}"
+    uploads_dir = Config.uploads_path()
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    file.save(uploads_dir / filename)
+    return filename
+
+
+@bp.route("/redactie/")
+@login_required
+def redactie_posts():
+    posts = RedactionalPost.query.order_by(RedactionalPost.published_at.desc()).all()
+    return render_template("admin/redactie_posts.html", posts=posts)
+
+
+@bp.route("/redactie/nieuw", methods=["GET", "POST"])
+@login_required
+def redactie_post_new():
+    if request.method == "POST":
+        filename = _save_upload(request.files.get("image"))
+        post = RedactionalPost(
+            topic        = request.form.get("topic", "nieuws").strip() or "nieuws",
+            title        = request.form.get("title", "").strip(),
+            content      = request.form.get("content", "").strip(),
+            image_path   = filename,
+            image_alt    = request.form.get("image_alt", "").strip() or None,
+            footer       = request.form.get("footer", "van de redactie").strip() or "van de redactie",
+            published_at = datetime.fromisoformat(request.form["published_at"]),
+            pinned       = bool(request.form.get("pinned")),
+            pin_position = int(request.form.get("pin_position") or 0),
+            pin_expires_at = (
+                datetime.fromisoformat(request.form["pin_expires_at"])
+                if request.form.get("pin_expires_at") else None
+            ),
+        )
+        for flag, _ in _PIN_SECTIONS:
+            setattr(post, flag, bool(request.form.get(flag)))
+        db.session.add(post)
+        db.session.commit()
+        flash("Post aangemaakt.", "success")
+        return redirect(url_for("admin.redactie_posts"))
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M")
+    return render_template("admin/redactie_post_form.html",
+                           post=None, now=now,
+                           topic_suggestions=_TOPIC_SUGGESTIONS,
+                           pin_sections=_PIN_SECTIONS)
+
+
+@bp.route("/redactie/<int:post_id>/bewerken", methods=["GET", "POST"])
+@login_required
+def redactie_post_edit(post_id):
+    post = RedactionalPost.query.get_or_404(post_id)
+    if request.method == "POST":
+        new_file = _save_upload(request.files.get("image"))
+        if new_file:
+            # Delete old image if replaced
+            if post.image_path:
+                from pathlib import Path
+                from ...config import Config
+                old = Config.uploads_path() / post.image_path
+                if old.exists():
+                    old.unlink()
+            post.image_path = new_file
+        elif not request.form.get("keep_image"):
+            # Explicit removal requested
+            if post.image_path:
+                from pathlib import Path
+                from ...config import Config
+                old = Config.uploads_path() / post.image_path
+                if old.exists():
+                    old.unlink()
+            post.image_path = None
+
+        post.topic        = request.form.get("topic", "nieuws").strip() or "nieuws"
+        post.title        = request.form.get("title", "").strip()
+        post.content      = request.form.get("content", "").strip()
+        post.image_alt    = request.form.get("image_alt", "").strip() or None
+        post.footer       = request.form.get("footer", "van de redactie").strip() or "van de redactie"
+        post.published_at = datetime.fromisoformat(request.form["published_at"])
+        post.pinned       = bool(request.form.get("pinned"))
+        post.pin_position = int(request.form.get("pin_position") or 0)
+        post.pin_expires_at = (
+            datetime.fromisoformat(request.form["pin_expires_at"])
+            if request.form.get("pin_expires_at") else None
+        )
+        for flag, _ in _PIN_SECTIONS:
+            setattr(post, flag, bool(request.form.get(flag)))
+        db.session.commit()
+        flash("Post opgeslagen.", "success")
+        return redirect(url_for("admin.redactie_posts"))
+    return render_template("admin/redactie_post_form.html",
+                           post=post,
+                           now=post.published_at.strftime("%Y-%m-%dT%H:%M"),
+                           topic_suggestions=_TOPIC_SUGGESTIONS,
+                           pin_sections=_PIN_SECTIONS)
+
+
+@bp.route("/redactie/<int:post_id>/verwijder", methods=["POST"])
+@login_required
+def redactie_post_delete(post_id):
+    post = RedactionalPost.query.get_or_404(post_id)
+    if post.image_path:
+        from pathlib import Path
+        from ...config import Config
+        img = Config.uploads_path() / post.image_path
+        if img.exists():
+            img.unlink()
+    db.session.delete(post)
+    db.session.commit()
+    flash("Post verwijderd.", "success")
+    return redirect(url_for("admin.redactie_posts"))
 
 
 # ── Opinion moderation ────────────────────────────────────────────────────────

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="redactie-post-page">
+
+  <nav class="breadcrumb">
+    <a href="{{ url_for('main.redactie') }}">← Redactie</a>
+  </nav>
+
+  <span class="redactional-topic-badge redactional-topic-badge--large">{{ post.topic }}</span>
+  <h1 class="redactie-post-title">{{ post.title }}</h1>
+
+  {% if post.image_path %}
+    <figure class="redactie-post-figure">
+      <img src="{{ url_for('main.uploaded_file', filename=post.image_path) }}"
+           alt="{{ post.image_alt or post.title }}"
+           class="redactie-post-image">
+      {% if post.image_alt %}
+        <figcaption>{{ post.image_alt }}</figcaption>
+      {% endif %}
+    </figure>
+  {% endif %}
+
+  {% if post.content %}
+    <div class="redactie-post-content prose">
+      {{ post.content | markdown }}
+    </div>
+  {% endif %}
+
+  <footer class="redactie-post-footer">
+    <span>{{ post.footer }}</span>
+    <time>{{ post.published_at.strftime('%-d %B %Y') }}</time>
+  </footer>
+
+</div>
+{% endblock %}

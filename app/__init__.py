@@ -21,6 +21,7 @@ def create_app(town: str = None) -> Flask:
     db_dir = Path(Config.DATA_ROOT) / active_town
     db_dir.mkdir(parents=True, exist_ok=True)
     Config.town_cache_path().mkdir(parents=True, exist_ok=True)
+    Config.uploads_path().mkdir(parents=True, exist_ok=True)
 
     # Validate and load secrets
     secret_key = Config._require_env("FLASK_SECRET_KEY", known_bad=_BAD_SECRETS)
@@ -68,6 +69,13 @@ def create_app(town: str = None) -> Flask:
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
+
+    # Markdown filter
+    import markdown as _md
+    from markupsafe import Markup as _Markup
+    app.jinja_env.filters["markdown"] = lambda text: _Markup(
+        _md.markdown(text or "", extensions=["nl2br", "fenced_code"])
+    )
 
     # Template globals — site identity from town config.json
     _town_cfg: dict = {}

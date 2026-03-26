@@ -1,0 +1,196 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{% if post %}Bewerk bericht{% else %}Nieuw bericht{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if post %}Bericht bewerken{% else %}Nieuw bericht{% endif %}</h1>
+
+<form method="post" enctype="multipart/form-data" class="admin-form redactie-form">
+
+  {# ── Onderwerp & Titel ──────────────────────────────────────────────────── #}
+  <div class="form-row">
+    <label for="topic">Onderwerp</label>
+    <input type="text" id="topic" name="topic" list="topic-suggestions"
+           value="{{ post.topic if post else 'nieuws' }}" required>
+    <datalist id="topic-suggestions">
+      {% for s in topic_suggestions %}
+        <option value="{{ s }}">
+      {% endfor %}
+    </datalist>
+  </div>
+
+  <div class="form-row">
+    <label for="title">Titel</label>
+    <input type="text" id="title" name="title"
+           value="{{ post.title if post else '' }}" required>
+  </div>
+
+  {# ── Inhoud (markdown) ─────────────────────────────────────────────────── #}
+  <div class="form-row form-row--full">
+    <label for="content">Inhoud <span class="form-hint">(markdown)</span></label>
+    <textarea id="content" name="content" rows="14"
+              class="redactie-content-area">{{ post.content if post else '' }}</textarea>
+  </div>
+
+  {# ── Afbeelding ────────────────────────────────────────────────────────── #}
+  <div class="form-row form-row--full">
+    <label>Afbeelding <span class="form-hint">(klik, sleep of plak Ctrl+V)</span></label>
+    <div class="upload-zone" id="upload-zone">
+      {% if post and post.image_path %}
+        <img id="upload-preview"
+             src="{{ url_for('main.uploaded_file', filename=post.image_path) }}"
+             alt="{{ post.image_alt or '' }}" class="upload-preview">
+        <p id="upload-placeholder" class="upload-placeholder" style="display:none">
+          Sleep een afbeelding hiernaartoe, klik om te kiezen, of plak (Ctrl+V)
+        </p>
+      {% else %}
+        <img id="upload-preview" class="upload-preview" style="display:none" alt="">
+        <p id="upload-placeholder" class="upload-placeholder">
+          Sleep een afbeelding hiernaartoe, klik om te kiezen, of plak (Ctrl+V)
+        </p>
+      {% endif %}
+      <input type="file" id="image-input" name="image" accept="image/*" style="display:none">
+    </div>
+    {% if post and post.image_path %}
+      <label class="form-checkbox" style="margin-top:0.4rem">
+        <input type="checkbox" name="keep_image" value="1" checked>
+        Huidige afbeelding behouden (verwijder vinkje om te wissen)
+      </label>
+    {% endif %}
+  </div>
+
+  <div class="form-row">
+    <label for="image_alt">Alt-tekst afbeelding</label>
+    <input type="text" id="image_alt" name="image_alt"
+           value="{{ post.image_alt if post and post.image_alt else '' }}"
+           placeholder="Beschrijving voor slechtzienden">
+  </div>
+
+  {# ── Footer & Publicatiedatum ──────────────────────────────────────────── #}
+  <div class="form-row">
+    <label for="footer">Footer</label>
+    <input type="text" id="footer" name="footer"
+           value="{{ post.footer if post else 'van de redactie' }}">
+  </div>
+
+  <div class="form-row">
+    <label for="published_at">Publicatiedatum</label>
+    <input type="datetime-local" id="published_at" name="published_at"
+           value="{{ now }}" required>
+  </div>
+
+  {# ── Pinning ───────────────────────────────────────────────────────────── #}
+  <fieldset class="form-fieldset">
+    <legend>Pinnen</legend>
+
+    <label class="form-checkbox">
+      <input type="checkbox" name="pinned" value="1"
+             {% if post and post.pinned %}checked{% endif %}
+             id="pinned-toggle">
+      Gepind
+    </label>
+
+    <div id="pin-options" {% if not (post and post.pinned) %}style="display:none"{% endif %}>
+      <div class="form-row">
+        <label for="pin_position">Positie <span class="form-hint">(0 = bovenaan)</span></label>
+        <input type="number" id="pin_position" name="pin_position" min="0"
+               value="{{ post.pin_position if post and post.pin_position is not none else 0 }}"
+               style="width:80px">
+      </div>
+
+      <div class="form-row">
+        <label for="pin_expires_at">Verloopt op <span class="form-hint">(leeg = nooit)</span></label>
+        <input type="datetime-local" id="pin_expires_at" name="pin_expires_at"
+               value="{{ post.pin_expires_at.strftime('%Y-%m-%dT%H:%M') if post and post.pin_expires_at else '' }}">
+      </div>
+
+      <div class="form-row form-row--full">
+        <label>Toon in secties</label>
+        <div class="pin-section-checks">
+          {% for flag, label in pin_sections %}
+            <label class="form-checkbox">
+              <input type="checkbox" name="{{ flag }}" value="1"
+                     {% if post and post|attr(flag) %}checked{% endif %}>
+              {{ label }}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="form-actions">
+    <button type="submit" class="btn">Opslaan</button>
+    <a href="{{ url_for('admin.redactie_posts') }}" class="btn btn-secondary">Annuleer</a>
+    {% if post %}
+      <a href="{{ url_for('main.redactie_post', post_id=post.id) }}" target="_blank"
+         class="btn btn-secondary">Bekijk ↗</a>
+    {% endif %}
+  </div>
+</form>
+
+<script>
+(function () {
+  // ── Pin options toggle ──────────────────────────────────────────────────────
+  var toggle = document.getElementById('pinned-toggle');
+  var opts   = document.getElementById('pin-options');
+  toggle.addEventListener('change', function () {
+    opts.style.display = toggle.checked ? '' : 'none';
+  });
+
+  // ── Image upload: click, drag & drop, clipboard paste ──────────────────────
+  var zone        = document.getElementById('upload-zone');
+  var input       = document.getElementById('image-input');
+  var preview     = document.getElementById('upload-preview');
+  var placeholder = document.getElementById('upload-placeholder');
+
+  function showPreview(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      preview.src = e.target.result;
+      preview.style.display = '';
+      if (placeholder) placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    var dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    showPreview(file);
+  }
+
+  zone.addEventListener('click', function (e) {
+    if (e.target !== input) input.click();
+  });
+
+  input.addEventListener('change', function () {
+    if (input.files[0]) showPreview(input.files[0]);
+  });
+
+  zone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  zone.addEventListener('dragleave', function () {
+    zone.classList.remove('drag-over');
+  });
+  zone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  document.addEventListener('paste', function (e) {
+    var items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        handleFile(items[i].getAsFile());
+        break;
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

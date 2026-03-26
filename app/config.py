@@ -29,6 +29,10 @@ class Config:
         return cls.DATA_ROOT / cls.TOWN / "cache" / "html"
 
     @classmethod
+    def uploads_path(cls) -> Path:
+        return cls.DATA_ROOT / cls.TOWN / "uploads"
+
+    @classmethod
     def geo_context(cls) -> dict:
         """Return geographic context for LLM classification."""
         import json

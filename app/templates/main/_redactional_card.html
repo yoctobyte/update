@@ -1,0 +1,38 @@
+{#
+  Redactional post card — used when a RedactionalPost is injected into article lists.
+  Expects: article (a RedactionalPost instance, named 'article' to match loop variable)
+#}
+<article class="article-card redactional-card">
+  <div class="redactional-card-header">
+    <span class="redactional-topic-badge">{{ article.topic }}</span>
+  </div>
+
+  <h2 class="article-title">
+    <a href="{{ url_for('main.redactie_post', post_id=article.id) }}">{{ article.title }}</a>
+  </h2>
+
+  {% if article.image_path %}
+    <a href="{{ url_for('main.redactie_post', post_id=article.id) }}" class="redactional-thumb-link">
+      <img src="{{ url_for('main.uploaded_file', filename=article.image_path) }}"
+           alt="{{ article.image_alt or article.title }}"
+           class="redactional-thumb" loading="lazy">
+    </a>
+  {% endif %}
+
+  {% if article.content %}
+    <a href="{{ url_for('main.redactie_post', post_id=article.id) }}" class="article-snippet-link">
+      <p class="article-snippet">{{ article.content | striptags | truncate(200) }}</p>
+    </a>
+  {% endif %}
+
+  <div class="article-footer">
+    <div class="article-sources">
+      <span class="redactional-footer-text">{{ article.footer }}</span>
+      <time class="article-date">
+        {{ article.published_at.strftime('%-d %b %H:%M') }}
+      </time>
+    </div>
+    <a href="{{ url_for('main.redactie_post', post_id=article.id) }}"
+       class="ext-indicator" title="Lees volledig bericht">↗</a>
+  </div>
+</article>

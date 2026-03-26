@@ -6,7 +6,10 @@
 </div>
 
 <div class="article-list">
-  {% for article in articles %}
+  {% for article in page_items %}
+    {% if article.is_redactional_post %}
+      {% include 'main/_redactional_card.html' %}
+    {% else %}
     <article class="article-card{% if article.geo_scope not in ('local', none) %} article-card--national{% endif %}">
       <h2 class="article-title">
         <a href="{{ url_for('main.article_detail', article_id=article.id) }}">{{ article.title }}</a>
@@ -17,15 +20,6 @@
         <a href="{{ url_for('main.article_detail', article_id=article.id) }}" class="article-snippet-link">
           <p class="article-snippet">{{ desc }}</p>
         </a>
-      {% endif %}
-
-      {% set active_stories = article.stories | selectattr("status", "equalto", "active") | list %}
-      {% if active_stories %}
-        <div class="article-stories">
-          {% for story in active_stories %}
-            <a href="{{ url_for('main.story_detail', story_id=story.id) }}" class="story-link">{{ story.title }}</a>
-          {% endfor %}
-        </div>
       {% endif %}
 
       <div class="article-footer">
@@ -59,6 +53,7 @@
            class="ext-indicator" title="Lees op {{ article.source.name }}">↗</a>
       </div>
     </article>
+    {% endif %}
   {% else %}
     <p>Geen artikelen op de voorpagina. Pas de regels aan in het <a href="{{ url_for('admin.frontpage_settings') }}">beheer</a>.</p>
   {% endfor %}
