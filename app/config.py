@@ -86,10 +86,10 @@ class Config:
 
     # Story clustering thresholds
     STORY_AUTOMERGE_THRESHOLD: float = float(
-        os.environ.get("STORY_AUTOMERGE_THRESHOLD", "0.85")
+        os.environ.get("STORY_AUTOMERGE_THRESHOLD", "0.64")
     )
     STORY_SUGGEST_THRESHOLD: float = float(
-        os.environ.get("STORY_SUGGEST_THRESHOLD", "0.65")
+        os.environ.get("STORY_SUGGEST_THRESHOLD", "0.50")
     )
 
     # Scheduling

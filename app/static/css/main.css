@@ -648,6 +648,21 @@ main {
   color: #fff;
   text-decoration: none;
 }
+.topic-more-btn {
+  padding: 0.2rem 0.7rem;
+  border-radius: 20px;
+  background: var(--c-tag-bg);
+  color: var(--c-tag-text);
+  font-family: system-ui, sans-serif;
+  font-size: 0.82rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.topic-more-btn:hover {
+  background: var(--c-accent);
+  color: #fff;
+}
 
 .tag {
   display: inline-block;
@@ -868,8 +883,12 @@ a.tag:hover { background: var(--c-accent); color: #fff; text-decoration: none; }
   display: inline-flex;
   align-items: center;
   opacity: 0.8;
+  filter: grayscale(1);
+  transition: filter 0.15s, opacity 0.15s;
+  color: inherit;
+  text-decoration: none;
 }
-.source-favicon-link:hover { opacity: 1; }
+.source-favicon-link:hover { opacity: 1; filter: none; }
 
 /* ext-indicator is now an <a> */
 a.ext-indicator {

@@ -10,10 +10,13 @@ from .opinion import Opinion
 from .contact import ContactMessage
 from .watched_url import WatchedURL
 from .suggested_topic import SuggestedTopic, suggested_topic_articles
+from .frontpage import FrontpageItem
+from .settings import SiteSetting
 
 __all__ = [
     "article_topics", "article_stories", "story_topics", "event_topics", "event_articles",
     "suggested_topic_articles",
     "Topic", "Source", "ExtractionRule", "Article", "Story", "StoryMergeLog", "Event",
     "Opinion", "ContactMessage", "WatchedURL", "SuggestedTopic",
+    "FrontpageItem", "SiteSetting",
 ]

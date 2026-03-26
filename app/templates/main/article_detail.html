@@ -49,7 +49,7 @@
       <h2>Gerelateerde verhalen</h2>
       {% for story, articles in related_per_story.items() %}
         <div class="related-story">
-          <a href="{{ url_for('main.story_detail', story_id=story.id) }}" class="related-story-title">
+          <a href="{{ url_for('main.redactie_detail', story_id=story.id) }}" class="related-story-title">
             ↗ {{ story.title }}
           </a>
           <ul class="related-article-list">
@@ -95,7 +95,7 @@
         <tbody>
           {% for log in merge_logs %}
             <tr>
-              <td><a href="{{ url_for('main.story_detail', story_id=log.story_id) }}">{{ log.story.title[:50] }}</a></td>
+              <td><a href="{{ url_for('main.redactie_detail', story_id=log.story_id) }}">{{ log.story.title[:50] }}</a></td>
               <td>{{ log.action }}</td>
               <td>
                 {% if log.outcome == 'merged' %}<span class="badge-ok">✓ samengevoegd</span>

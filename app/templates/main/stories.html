@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Verhalen{% endblock %}
+{% block title %}Redactie{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Verhalen</h1>
+  <h1>Redactie</h1>
 </div>
 
 <div class="story-list">
   {% for story in pagination.items %}
     <div class="story-card">
-      <h2><a href="{{ url_for('main.story_detail', story_id=story.id) }}">{{ story.title }}</a></h2>
+      <h2><a href="{{ url_for('main.redactie_detail', story_id=story.id) }}">{{ story.title }}</a></h2>
       {% if story.description %}
         <p>{{ story.description }}</p>
       {% endif %}
@@ -25,15 +25,15 @@
       {% endif %}
     </div>
   {% else %}
-    <p>Geen verhalen gevonden.</p>
+    <p>Geen redactionele verhalen gevonden.</p>
   {% endfor %}
 </div>
 
 {% if pagination.pages > 1 %}
   <nav class="pagination">
-    {% if pagination.has_prev %}<a href="{{ url_for('main.stories', page=pagination.prev_num) }}">← Vorige</a>{% endif %}
+    {% if pagination.has_prev %}<a href="{{ url_for('main.redactie', page=pagination.prev_num) }}">← Vorige</a>{% endif %}
     <span>{{ pagination.page }} / {{ pagination.pages }}</span>
-    {% if pagination.has_next %}<a href="{{ url_for('main.stories', page=pagination.next_num) }}">Volgende →</a>{% endif %}
+    {% if pagination.has_next %}<a href="{{ url_for('main.redactie', page=pagination.next_num) }}">Volgende →</a>{% endif %}
   </nav>
 {% endif %}
 {% endblock %}

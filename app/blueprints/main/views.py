@@ -15,6 +15,47 @@ def _town_cfg() -> dict:
         return {}
 
 
+_SECTION_FLAG = {
+    "local":    "show_local",
+    "region":   "show_region",
+    "province": "show_province",
+    "national": "show_national",
+    "intl":     "show_intl",
+    "alles":    "show_alles",
+}
+
+
+TOPIC_SIDEBAR_TOP = 7
+
+
+def _topic_groups(section: str, active_topic=None):
+    """Return (topics_top, topics_section, topics_all) for the sidebar.
+
+    topics_top:     up to TOPIC_SIDEBAR_TOP most-populated section-visible topics
+                    (always shown); active_topic appended if not already included
+    topics_section: remaining section-visible topics (hidden, first "..." press)
+    topics_all:     topics not visible in this section (hidden, second "..." press)
+    """
+    flag = _SECTION_FLAG.get(section)
+    all_topics = Topic.query.order_by(Topic.article_count.desc(), Topic.name).all()
+
+    section_visible = [t for t in all_topics if flag is None or getattr(t, flag)]
+    not_section     = [t for t in all_topics if flag is not None and not getattr(t, flag)]
+
+    top           = section_visible[:TOPIC_SIDEBAR_TOP]
+    section_rest  = section_visible[TOPIC_SIDEBAR_TOP:]
+
+    # Surface active_topic if it's buried in overflow
+    if active_topic:
+        top_ids = {t.id for t in top}
+        if active_topic.id not in top_ids:
+            section_rest = [t for t in section_rest if t.id != active_topic.id]
+            not_section  = [t for t in not_section  if t.id != active_topic.id]
+            top.append(active_topic)
+
+    return top, section_rest, not_section
+
+
 def _primary_only(query):
     """Exclude URL duplicates: keep only the first-fetched article per URL.
     When the same URL is picked up by multiple sources, only the lowest-id
@@ -29,11 +70,22 @@ def _primary_only(query):
 
 def _sources_by_url(articles) -> dict:
     """Batch-query all active sources covering each URL on the page.
-    Returns dict[url -> list[Source]], with article.source first."""
+
+    Two passes:
+    1. Exact URL match — catches the same article fetched by multiple RSS feeds.
+    2. Story siblings — when articles about the same story (different URLs,
+       different publishers) are merged, all their sources appear under each card.
+
+    Returns dict[url -> list[Source]].
+    """
     from collections import defaultdict
+    from ...models.associations import article_stories as _at
+
     urls = list({a.url for a in articles if a.url})
     if not urls:
         return {}
+
+    # Pass 1: exact URL match
     rows = (
         db.session.query(Article.url, Source)
         .join(Article.source)
@@ -42,18 +94,62 @@ def _sources_by_url(articles) -> dict:
         .all()
     )
     result: dict = defaultdict(list)
-    seen: dict = defaultdict(set)
+    seen: dict = defaultdict(set)  # url -> set of source_ids already added
     for url, source in rows:
         if source.id not in seen[url]:
             seen[url].add(source.id)
             result[url].append(source)
+
+    # Pass 2: story siblings — different URLs, same story
+    article_ids = [a.id for a in articles]
+    url_by_id = {a.id: a.url for a in articles}
+
+    memberships = db.session.execute(
+        _at.select().where(_at.c.article_id.in_(article_ids))
+    ).fetchall()
+    if not memberships:
+        return dict(result)
+
+    story_ids = list({row.story_id for row in memberships})
+    # article_id -> set of story_ids it belongs to
+    art_stories: dict = defaultdict(set)
+    for row in memberships:
+        art_stories[row.article_id].add(row.story_id)
+
+    # All (story_id, sibling_url, sibling_source) in those stories
+    sibling_rows = (
+        db.session.query(_at.c.story_id, Article.url, Source)
+        .join(Article, Article.id == _at.c.article_id)
+        .join(Source, Source.id == Article.source_id)
+        .filter(_at.c.story_id.in_(story_ids))
+        .filter(Source.active == True)
+        .all()
+    )
+    # story_id -> list of (url, source) for all members
+    story_sources: dict = defaultdict(list)
+    seen_story: dict = defaultdict(set)
+    for story_id, sib_url, sib_source in sibling_rows:
+        if sib_source.id not in seen_story[story_id]:
+            seen_story[story_id].add(sib_source.id)
+            story_sources[story_id].append((sib_url, sib_source))
+
+    # For each displayed article, merge in sources from its story siblings
+    for article in articles:
+        if not article.url:
+            continue
+        for story_id in art_stories.get(article.id, set()):
+            for sib_url, sib_source in story_sources[story_id]:
+                if sib_url != article.url and sib_source.id not in seen[article.url]:
+                    seen[article.url].add(sib_source.id)
+                    result[article.url].append(sib_source)
+
     return dict(result)
 
 
 # ── News ──────────────────────────────────────────────────────────────────────
 
-@bp.route("/")
-def index():
+def _lokaal_response():
+    """Render the local news listing. Used by both / (fallback) and /<town_slug>."""
     page = request.args.get("page", 1, type=int)
     topic_id = request.args.get("topic", type=int)
 
@@ -62,7 +158,6 @@ def index():
         .join(Article.source)
         .filter_by(active=True)
         .filter(Article.geo_scope == "local")
-        # Only publish once the AI rewrite is done
         .filter(Article.summary.isnot(None))
         .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
     )
@@ -70,16 +165,52 @@ def index():
         query = query.filter(Article.topics.any(id=topic_id))
 
     pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
+    topics_top, topics_section, topics_all = _topic_groups("local", active_topic)
 
     return render_template(
         "main/index.html",
         pagination=pagination,
-        topics=topics,
+        topics_top=topics_top,
+        topics_section=topics_section,
+        topics_all=topics_all,
         active_topic=active_topic,
+        section_endpoint="main.lokaal",
         sources_by_url=_sources_by_url(pagination.items),
     )
+
+
+def lokaal():
+    """Canonical local news view — registered at /<town_slug> by create_app."""
+    return _lokaal_response()
+
+
+@bp.route("/lokaal")
+def lokaal_redirect():
+    """Backward-compat alias: redirect to the canonical /<town_slug> URL."""
+    town = current_app.jinja_env.globals.get("site_town", "").lower()
+    if town:
+        qs = request.query_string.decode()
+        target = f"/{town}" + (f"?{qs}" if qs else "")
+        return redirect(target, 301)
+    return _lokaal_response()
+
+
+@bp.route("/")
+def index():
+    """Root: serve frontpage when enabled, otherwise fall through to local news."""
+    from ...services.frontpage import frontpage_enabled, get_current_frontpage
+    from ...models import Source as _Source
+    if frontpage_enabled():
+        articles = get_current_frontpage()
+        topics = Topic.query.order_by(Topic.name).all()
+        return render_template(
+            "main/frontpage.html",
+            articles=articles,
+            topics=topics,
+            sources_by_url=_sources_by_url(articles),
+        )
+    return _lokaal_response()
 
 
 @bp.route("/nieuws/<int:article_id>")
@@ -138,14 +269,17 @@ def regio():
         query = query.filter(Article.topics.any(id=topic_id))
 
     pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
+    topics_top, topics_section, topics_all = _topic_groups("region", active_topic)
 
     return render_template(
         "main/regio.html",
         pagination=pagination,
-        topics=topics,
+        topics_top=topics_top,
+        topics_section=topics_section,
+        topics_all=topics_all,
         active_topic=active_topic,
+        section_endpoint="main.regio",
         region_towns=region_towns,
         sources_by_url=_sources_by_url(pagination.items),
     )
@@ -170,14 +304,17 @@ def provincie():
         query = query.filter(Article.topics.any(id=topic_id))
 
     pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
+    topics_top, topics_section, topics_all = _topic_groups("province", active_topic)
 
     return render_template(
         "main/provincie.html",
         pagination=pagination,
-        topics=topics,
+        topics_top=topics_top,
+        topics_section=topics_section,
+        topics_all=topics_all,
         active_topic=active_topic,
+        section_endpoint="main.provincie",
         sources_by_url=_sources_by_url(pagination.items),
     )
 
@@ -201,14 +338,17 @@ def nationaal():
         query = query.filter(Article.topics.any(id=topic_id))
 
     pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
+    topics_top, topics_section, topics_all = _topic_groups("national", active_topic)
 
     return render_template(
         "main/nationaal.html",
         pagination=pagination,
-        topics=topics,
+        topics_top=topics_top,
+        topics_section=topics_section,
+        topics_all=topics_all,
         active_topic=active_topic,
+        section_endpoint="main.nationaal",
         sources_by_url=_sources_by_url(pagination.items),
     )
 
@@ -232,14 +372,17 @@ def internationaal():
         query = query.filter(Article.topics.any(id=topic_id))
 
     pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
+    topics_top, topics_section, topics_all = _topic_groups("intl", active_topic)
 
     return render_template(
         "main/internationaal.html",
         pagination=pagination,
-        topics=topics,
+        topics_top=topics_top,
+        topics_section=topics_section,
+        topics_all=topics_all,
         active_topic=active_topic,
+        section_endpoint="main.internationaal",
         sources_by_url=_sources_by_url(pagination.items),
     )
 
@@ -262,22 +405,25 @@ def alles():
         query = query.filter(Article.topics.any(id=topic_id))
 
     pagination = _primary_only(query).paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = Topic.query.order_by(Topic.name).all()
     active_topic = Topic.query.get(topic_id) if topic_id else None
+    topics_top, topics_section, topics_all = _topic_groups("alles", active_topic)
 
     return render_template(
         "main/alles.html",
         pagination=pagination,
-        topics=topics,
+        topics_top=topics_top,
+        topics_section=topics_section,
+        topics_all=topics_all,
         active_topic=active_topic,
+        section_endpoint="main.alles",
         sources_by_url=_sources_by_url(pagination.items),
     )
 
 
-# ── Stories ───────────────────────────────────────────────────────────────────
+# ── Redactie (was: Verhalen) ───────────────────────────────────────────────────
 
-@bp.route("/verhalen")
-def stories():
+@bp.route("/redactie")
+def redactie():
     page = request.args.get("page", 1, type=int)
     pagination = (
         Story.query
@@ -288,11 +434,21 @@ def stories():
     return render_template("main/stories.html", pagination=pagination)
 
 
-@bp.route("/verhalen/<int:story_id>")
-def story_detail(story_id):
+@bp.route("/redactie/<int:story_id>")
+def redactie_detail(story_id):
     story = Story.query.get_or_404(story_id)
     articles = sorted(story.articles, key=lambda a: a.published_at or a.created_at, reverse=True)
     return render_template("main/story_detail.html", story=story, articles=articles)
+
+
+@bp.route("/verhalen")
+def verhalen_redirect():
+    return redirect(url_for("main.redactie"), 301)
+
+
+@bp.route("/verhalen/<int:story_id>")
+def verhalen_detail_redirect(story_id):
+    return redirect(url_for("main.redactie_detail", story_id=story_id), 301)
 
 
 # ── Events ────────────────────────────────────────────────────────────────────
@@ -309,7 +465,7 @@ def events():
         query = query.filter(Event.topics.any(id=topic_id))
 
     pagination = query.paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = Topic.query.order_by(Topic.name).all()
+    topics = _section_topics("alles")
     active_topic = Topic.query.get(topic_id) if topic_id else None
 
     return render_template(
@@ -326,10 +482,10 @@ def event_detail(event_id):
     return render_template("main/event_detail.html", event=event)
 
 
-# ── Opinion ───────────────────────────────────────────────────────────────────
+# ── Ingezonden (was: Opinie) ───────────────────────────────────────────────────
 
-@bp.route("/opinie")
-def opinie_list():
+@bp.route("/ingezonden")
+def ingezonden_list():
     page = request.args.get("page", 1, type=int)
     pagination = (
         Opinion.query
@@ -340,15 +496,15 @@ def opinie_list():
     return render_template("main/opinie_list.html", pagination=pagination)
 
 
-@bp.route("/opinie/<int:opinion_id>")
-def opinie_detail(opinion_id):
+@bp.route("/ingezonden/<int:opinion_id>")
+def ingezonden_detail(opinion_id):
     opinion = Opinion.query.filter_by(id=opinion_id, status="published").first_or_404()
     return render_template("main/opinie_detail.html", opinion=opinion)
 
 
-@bp.route("/opinie/insturen", methods=["GET", "POST"])
+@bp.route("/ingezonden/insturen", methods=["GET", "POST"])
 @limiter.limit("5 per minute; 20 per hour", methods=["POST"])
-def opinie_insturen():
+def ingezonden_insturen():
     if request.method == "POST":
         pen_name = request.form.get("pen_name", "").strip()
         title    = request.form.get("title", "").strip()
@@ -368,14 +524,14 @@ def opinie_insturen():
         db.session.add(opinion)
         db.session.commit()
 
-        edit_url = url_for("main.opinie_bewerken", token=opinion.token, _external=True)
+        edit_url = url_for("main.ingezonden_bewerken", token=opinion.token, _external=True)
         return render_template("main/opinie_ingezonden.html", opinion=opinion, edit_url=edit_url)
 
     return render_template("main/opinie_form.html", errors=[], pen_name="", title="", body="", email="")
 
 
-@bp.route("/opinie/bewerken/<token>", methods=["GET", "POST"])
-def opinie_bewerken(token):
+@bp.route("/ingezonden/bewerken/<token>", methods=["GET", "POST"])
+def ingezonden_bewerken(token):
     opinion = Opinion.query.filter_by(token=token).first_or_404()
 
     if not opinion.editable:
@@ -400,10 +556,30 @@ def opinie_bewerken(token):
         opinion.body     = body
         db.session.commit()
         flash("Wijzigingen opgeslagen.", "success")
-        return redirect(url_for("main.opinie_bewerken", token=token))
+        return redirect(url_for("main.ingezonden_bewerken", token=token))
 
     return render_template("main/opinie_bewerken.html", opinion=opinion, errors=[],
                            pen_name=opinion.pen_name, title=opinion.title, body=opinion.body)
+
+
+@bp.route("/opinie")
+def opinie_redirect():
+    return redirect(url_for("main.ingezonden_list"), 301)
+
+
+@bp.route("/opinie/<int:opinion_id>")
+def opinie_detail_redirect(opinion_id):
+    return redirect(url_for("main.ingezonden_detail", opinion_id=opinion_id), 301)
+
+
+@bp.route("/opinie/insturen")
+def opinie_insturen_redirect():
+    return redirect(url_for("main.ingezonden_insturen"), 301)
+
+
+@bp.route("/opinie/bewerken/<token>")
+def opinie_bewerken_redirect(token):
+    return redirect(url_for("main.ingezonden_bewerken", token=token), 301)
 
 
 # ── About / Over ons ──────────────────────────────────────────────────────────

@@ -1,0 +1,77 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Voorpagina preview{% endblock %}
+{% block content %}
+
+<h1>Voorpagina preview</h1>
+<p><strong>{{ count }}</strong> artikelen zouden nu op de voorpagina staan (zonder wijzigingen opgeslagen).</p>
+<p>
+  <a href="{{ url_for('admin.frontpage_settings') }}" class="btn">← Terug naar instellingen</a>
+</p>
+
+<div class="article-list">
+  {% for article in articles %}
+    <article class="article-card">
+      <h2 class="article-title">
+        <a href="{{ url_for('main.article_detail', article_id=article.id) }}" target="_blank">{{ article.title }}</a>
+      </h2>
+
+      {% set desc = article.summary or article.short_text %}
+      {% if desc %}
+        <p class="article-snippet">{{ desc }}</p>
+      {% endif %}
+
+      <div class="article-footer">
+        <div class="article-sources">
+          {% for src in sources_by_url.get(article.url, [article.source]) %}
+          <a href="{{ article.url }}" target="_blank" rel="noopener"
+             title="{{ src.name }}" class="source-favicon-link">
+            <img src="{{ url_for('main.source_favicon', source_id=src.id) }}"
+                 class="source-favicon"
+                 alt="{{ src.name }}"
+                 width="16" height="16"
+                 loading="lazy">
+          </a>
+          {% endfor %}
+          <time class="article-date">
+            {%- if article.published_at -%}
+              {{ article.published_at.strftime('%-d %b %H:%M') }}
+            {%- elif article.created_at -%}
+              {{ article.created_at.strftime('%-d %b %H:%M') }}
+            {%- endif -%}
+          </time>
+          <span class="geo-badge geo-{{ article.geo_scope or 'local' }}">{{ article.geo_scope or 'lokaal' }}</span>
+          {% if article.frontpage_worthy is not none %}
+            <span class="geo-badge" style="background:#e0e0e0;color:#333">
+              {{ 'AI: ja' if article.frontpage_worthy else 'AI: nee (override)' }}
+            </span>
+          {% endif %}
+        </div>
+        <a href="{{ article.url }}" target="_blank" rel="noopener"
+           class="ext-indicator" title="Lees op {{ article.source.name }}">↗</a>
+      </div>
+
+      {# Show which rule matched #}
+      <div style="font-size:0.75em;color:#888;margin-top:0.3em">
+        {% set matched_rule = namespace(val=none) %}
+        {% for topic in article.topics %}
+          {% if topic.frontpage_rule == 'always_in' and matched_rule.val is none %}
+            {% set matched_rule.val = 'always_in:' ~ topic.name %}
+          {% elif topic.frontpage_rule == 'always_out' %}
+            {% set matched_rule.val = 'always_out:' ~ topic.name %}
+          {% endif %}
+        {% endfor %}
+        {% if matched_rule.val %}
+          Reden: {{ matched_rule.val }}
+        {% elif article.geo_scope in ('local', none) %}
+          Reden: lokaal (standaard)
+        {% else %}
+          Reden: AI goedgekeurd
+        {% endif %}
+      </div>
+    </article>
+  {% else %}
+    <p>Geen artikelen geselecteerd voor de voorpagina. Controleer de regels en zorg dat er nationale artikelen zijn beoordeeld.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}

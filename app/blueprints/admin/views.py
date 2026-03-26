@@ -10,7 +10,7 @@ from . import bp
 from ...extensions import db, limiter
 from ...models import (
     Source, ExtractionRule, Story, StoryMergeLog,
-    Article, Topic, Event, SuggestedTopic
+    Article, Topic, Event, SuggestedTopic, SiteSetting
 )
 from ...services import clustering, extractor, llm
 
@@ -674,6 +674,38 @@ def topic_delete(topic_id):
     return redirect(url_for("admin.topics"))
 
 
+# ── Topic section visibility ──────────────────────────────────────────────────
+
+_VISIBILITY_SECTIONS = [
+    ("show_local",    "Lokaal"),
+    ("show_region",   "Regio"),
+    ("show_province", "Provincie"),
+    ("show_national", "Nationaal"),
+    ("show_intl",     "Internationaal"),
+    ("show_alles",    "Alles"),
+]
+
+
+@bp.route("/onderwerpen/zichtbaarheid", methods=["GET", "POST"])
+@login_required
+def topic_visibility():
+    topics = Topic.query.order_by(Topic.name).all()
+
+    if request.method == "POST":
+        for topic in topics:
+            for flag, _ in _VISIBILITY_SECTIONS:
+                setattr(topic, flag, bool(request.form.get(f"{flag}_{topic.id}")))
+        db.session.commit()
+        flash("Zichtbaarheid opgeslagen.", "success")
+        return redirect(url_for("admin.topic_visibility"))
+
+    return render_template(
+        "admin/topic_visibility.html",
+        topics=topics,
+        sections=_VISIBILITY_SECTIONS,
+    )
+
+
 # ── Suggested Topics ──────────────────────────────────────────────────────────
 
 @bp.route("/onderwerpen/suggesties")
@@ -984,6 +1016,86 @@ def watched_urls_fetch_all():
     db.session.commit()
     flash(f"{ok_count} van {len(entries)} URL's opgehaald.", "success")
     return redirect(url_for("admin.watched_urls"))
+
+
+# ── Frontpage ─────────────────────────────────────────────────────────────────
+
+_FRONTPAGE_RULES = [
+    ("always_in",  "Altijd op voorpagina"),
+    ("depends",    "LLM beslist"),
+    ("always_out", "Nooit op voorpagina"),
+]
+
+
+@bp.route("/voorpagina", methods=["GET", "POST"])
+@login_required
+def frontpage_settings():
+    """Frontpage admin: topic rules + LLM prompt editor + go-live toggle."""
+    from ...services.llm import _DEFAULT_FRONTPAGE_PROMPT
+    topics = Topic.query.order_by(Topic.name).all()
+    enabled = SiteSetting.get("frontpage_enabled", "0") == "1"
+    llm_prompt = SiteSetting.get("frontpage_llm_prompt", "")
+
+    if request.method == "POST":
+        action = request.form.get("action")
+
+        if action == "save_rules":
+            for topic in topics:
+                rule = request.form.get(f"rule_{topic.id}", "depends")
+                if rule in ("always_in", "always_out", "depends"):
+                    topic.frontpage_rule = rule
+            db.session.commit()
+            flash("Regels opgeslagen.", "success")
+
+        elif action == "save_prompt":
+            prompt = request.form.get("llm_prompt", "").strip()
+            SiteSetting.set("frontpage_llm_prompt", prompt)
+            flash("Prompt opgeslagen.", "success")
+
+        elif action == "reset_prompt":
+            SiteSetting.set("frontpage_llm_prompt", "")
+            flash("Prompt gereset naar standaard.", "success")
+
+        elif action == "enable":
+            SiteSetting.set("frontpage_enabled", "1")
+            flash("Voorpagina ingeschakeld.", "success")
+
+        elif action == "disable":
+            SiteSetting.set("frontpage_enabled", "0")
+            flash("Voorpagina uitgeschakeld. Bezoekers zien nu lokaal nieuws.", "success")
+
+        return redirect(url_for("admin.frontpage_settings"))
+
+    return render_template(
+        "admin/frontpage.html",
+        topics=topics,
+        rules=_FRONTPAGE_RULES,
+        enabled=enabled,
+        llm_prompt=llm_prompt,
+        default_prompt=_DEFAULT_FRONTPAGE_PROMPT,
+    )
+
+
+@bp.route("/voorpagina/preview")
+@login_required
+def frontpage_preview():
+    """Dry-run preview: show what the frontpage would look like without changing DB."""
+    from ...services.frontpage import update_frontpage, evaluate_pending
+    from ..main.views import _sources_by_url
+
+    # Evaluate any pending national articles first (reads/writes frontpage_worthy)
+    evaluate_pending(current_app._get_current_object())
+
+    articles = update_frontpage(current_app._get_current_object(), dry_run=True)
+    topics = Topic.query.order_by(Topic.name).all()
+
+    return render_template(
+        "admin/frontpage_preview.html",
+        articles=articles,
+        topics=topics,
+        sources_by_url=_sources_by_url(articles),
+        count=len(articles),
+    )
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────

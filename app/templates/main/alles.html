@@ -3,15 +3,7 @@
 {% block content %}
 <div class="page-header">
   <h1>Alles</h1>
-  <div class="topic-filter">
-    <a href="{{ url_for('main.alles') }}" {% if not active_topic %}class="active"{% endif %}>Alle</a>
-    {% for topic in topics %}
-      <a href="{{ url_for('main.alles', topic=topic.id) }}"
-         {% if active_topic and active_topic.id == topic.id %}class="active"{% endif %}>
-        {{ topic.name }}
-      </a>
-    {% endfor %}
-  </div>
+  {% include 'main/_topic_filter.html' %}
 </div>
 
 <div class="article-list">

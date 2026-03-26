@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Opinie{% endblock %}
+{% block title %}Ingezonden{% endblock %}
 {% block content %}
 
 <div class="page-header">
-  <h1>Opinie</h1>
-  <a href="{{ url_for('main.opinie_insturen') }}" class="btn">Stuk insturen</a>
+  <h1>Ingezonden</h1>
+  <a href="{{ url_for('main.ingezonden_insturen') }}" class="btn">Stuk insturen</a>
 </div>
 
 <p class="page-intro">
@@ -22,7 +22,7 @@
           <time>{{ op.published_at.strftime('%d %b %Y') }}</time>
         {% endif %}
       </div>
-      <h2><a href="{{ url_for('main.opinie_detail', opinion_id=op.id) }}">{{ op.title }}</a></h2>
+      <h2><a href="{{ url_for('main.ingezonden_detail', opinion_id=op.id) }}">{{ op.title }}</a></h2>
       <p class="opinie-snippet">{{ op.body[:280] }}{% if op.body|length > 280 %}…{% endif %}</p>
     </article>
     {% endfor %}
@@ -31,17 +31,17 @@
   {% if pagination.pages > 1 %}
   <nav class="pagination">
     {% if pagination.has_prev %}
-      <a href="{{ url_for('main.opinie_list', page=pagination.prev_num) }}">← Vorige</a>
+      <a href="{{ url_for('main.ingezonden_list', page=pagination.prev_num) }}">← Vorige</a>
     {% endif %}
     <span>{{ pagination.page }} / {{ pagination.pages }}</span>
     {% if pagination.has_next %}
-      <a href="{{ url_for('main.opinie_list', page=pagination.next_num) }}">Volgende →</a>
+      <a href="{{ url_for('main.ingezonden_list', page=pagination.next_num) }}">Volgende →</a>
     {% endif %}
   </nav>
   {% endif %}
 
 {% else %}
-  <p>Nog geen gepubliceerde opinies. <a href="{{ url_for('main.opinie_insturen') }}">Wees de eerste!</a></p>
+  <p>Nog geen gepubliceerde opinies. <a href="{{ url_for('main.ingezonden_insturen') }}">Wees de eerste!</a></p>
 {% endif %}
 
 {% endblock %}

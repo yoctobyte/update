@@ -23,6 +23,10 @@ class Source(db.Model):
     render_js = db.Column(db.Boolean, nullable=False, default=False)
     cookie_accept_selector = db.Column(db.String(300), nullable=True)  # CSS selector to click on consent walls
     last_fetch_new_count = db.Column(db.Integer, nullable=True)  # new items found in the most recent fetch
+    # HTTP conditional GET support (non-JS sources): store ETag and Last-Modified
+    # response headers so subsequent fetches can send If-None-Match / If-Modified-Since
+    http_etag = db.Column(db.String(500), nullable=True)
+    http_last_modified = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     articles = db.relationship("Article", back_populates="source", lazy="dynamic")

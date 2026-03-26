@@ -33,12 +33,32 @@ def _check_templates(app) -> None:
         logger.info("Template cache cleared (file change detected)")
 
 
+def _refresh_topic_counts(app) -> None:
+    """Update the cached article_count on every Topic. Run daily."""
+    with app.app_context():
+        from sqlalchemy import func
+        from ..models import Topic
+        from ..models.associations import article_topics
+        from ..extensions import db
+
+        counts = dict(
+            db.session.query(article_topics.c.topic_id, func.count())
+            .group_by(article_topics.c.topic_id)
+            .all()
+        )
+        for topic in Topic.query.all():
+            topic.article_count = counts.get(topic.id, 0)
+        db.session.commit()
+        logger.info("Topic article counts refreshed (%d topics with articles)", len(counts))
+
+
 def register_jobs(scheduler, app) -> None:
     from .fetcher import fetch_all_active
     from .extractor import extract_all_pending, tag_untagged_articles
     from .embedder import embed_pending, preload_model
     from .clustering import cluster_new_articles
     from .watcher import fetch_all_watched
+    from .frontpage import evaluate_pending, update_frontpage
 
     # Pre-warm the embedding model in a background thread so it's ready before
     # the first embed_pending job fires — avoids loading during interpreter shutdown.
@@ -107,12 +127,42 @@ def register_jobs(scheduler, app) -> None:
         replace_existing=True,
     )
     scheduler.add_job(
+        id="refresh_topic_counts",
+        func=_refresh_topic_counts,
+        args=[app],
+        trigger="interval",
+        hours=24,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
+        replace_existing=True,
+    )
+    scheduler.add_job(
         id="check_templates",
         func=_check_templates,
         args=[app],
         trigger="interval",
         seconds=30,
         next_run_time=now,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="evaluate_frontpage",
+        func=evaluate_pending,
+        args=[app],
+        trigger="interval",
+        minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="update_frontpage",
+        func=update_frontpage,
+        args=[app],
+        trigger="interval",
+        minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
     logger.info("Scheduler jobs registered.")

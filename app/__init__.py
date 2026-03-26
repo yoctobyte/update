@@ -77,10 +77,18 @@ def create_app(town: str = None) -> Flask:
             _town_cfg = json.loads(_cfg_path.read_text(encoding="utf-8"))
         except Exception:
             pass
+    site_town = _town_cfg.get("site_town", active_town.title())
     app.jinja_env.globals.update(
         site_name=_town_cfg.get("site_name", "Lokaal Nieuws"),
-        site_town=_town_cfg.get("site_town", active_town.title()),
+        site_town=site_town,
     )
+
+    # Register /<town_slug> as the canonical local news URL.
+    # /lokaal redirects here (301). The view function is defined in the blueprint
+    # but not attached to a route there, so we can give it the right URL here.
+    from .blueprints.main.views import lokaal as _lokaal_view
+    town_slug = site_town.lower()
+    app.add_url_rule(f"/{town_slug}", endpoint="main.lokaal", view_func=_lokaal_view)
 
     # CLI commands
     from .cli.commands import register_commands

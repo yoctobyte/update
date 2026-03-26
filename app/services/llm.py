@@ -368,6 +368,43 @@ Geef alleen de JSON terug, geen uitleg."""
         return []
 
 
+_DEFAULT_FRONTPAGE_PROMPT = """Je bent redacteur van een lokale nieuwssite. Beoordeel of het volgende nationale nieuwsbericht relevant genoeg is voor de voorpagina van een lokale nieuwssite.
+
+Criteria voor plaatsing op de voorpagina:
+- Het bericht heeft directe gevolgen voor het dagelijks leven (bijv. wet- en regelgeving, gezondheid, veiligheid, wonen, werk)
+- Het bericht gaat over een onderwerp dat lokaal sterk speelt of herkenbaar is
+- Het bericht is substantieel nieuws, geen sensatie of entertainment
+
+Antwoord ALLEEN met JSON: {{"worthy": true}} of {{"worthy": false}}
+
+Kop: {title}
+Samenvatting: {summary}"""
+
+
+def evaluate_frontpage_worthy(title: str, summary: str, custom_prompt: str | None = None) -> bool | None:
+    """Ask LLM if a national article is worthy of the local front page.
+    Returns True/False, or None on failure."""
+    template = custom_prompt or _DEFAULT_FRONTPAGE_PROMPT
+    prompt = template.format(title=title, summary=summary[:500])
+
+    result = _call(
+        [{"role": "user", "content": prompt}],
+        model=Config.OPENAI_MODEL_DEFAULT,
+        max_tokens=20,
+    )
+    if not result:
+        return None
+    try:
+        data = json.loads(_strip_fences(result))
+        worthy = data.get("worthy")
+        if isinstance(worthy, bool):
+            return worthy
+        return None
+    except (json.JSONDecodeError, TypeError):
+        logger.warning("evaluate_frontpage_worthy returned invalid JSON: %s", result)
+        return None
+
+
 def evaluate_source(url: str, html_sample: str) -> dict | None:
     """
     Ask the LLM whether a URL looks like a useful local news source.

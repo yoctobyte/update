@@ -1,0 +1,87 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Voorpagina beheer{% endblock %}
+{% block content %}
+
+<h1>Voorpagina</h1>
+
+{# ── Status banner ── #}
+<div class="card mb-2">
+  <h2>Status</h2>
+  {% if enabled %}
+    <p class="status-ok">Voorpagina is <strong>ingeschakeld</strong>. Bezoekers zien de nieuwe voorpagina op <code>/</code>.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="disable">
+      <button type="submit" class="btn btn-danger">Voorpagina uitschakelen</button>
+    </form>
+  {% else %}
+    <p class="status-warn">Voorpagina is <strong>uitgeschakeld</strong>. Bezoekers zien lokaal nieuws. Schakel in als je tevreden bent met de preview.</p>
+    <div class="btn-group">
+      <a href="{{ url_for('admin.frontpage_preview') }}" class="btn">Preview bekijken</a>
+      <form method="post" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="enable">
+        <button type="submit" class="btn btn-primary">Voorpagina inschakelen</button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+
+{# ── Topic rules ── #}
+<div class="card mb-2">
+  <h2>Onderwerp-regels</h2>
+  <p>Bepaal per onderwerp of artikelen altijd, nooit, of alleen op advies van de AI op de voorpagina komen.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="save_rules">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Onderwerp</th>
+          {% for value, label in rules %}
+            <th>{{ label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for topic in topics %}
+          <tr>
+            <td>{{ topic.name }}</td>
+            {% for value, label in rules %}
+              <td style="text-align:center">
+                <input type="radio"
+                       name="rule_{{ topic.id }}"
+                       value="{{ value }}"
+                       {% if topic.frontpage_rule == value %}checked{% endif %}>
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit" class="btn btn-primary mt-1">Regels opslaan</button>
+  </form>
+</div>
+
+{# ── LLM Prompt editor ── #}
+<div class="card">
+  <h2>AI-prompt aanpassen</h2>
+  <p>Deze prompt gebruikt de AI om te beoordelen of een nationaal artikel op de voorpagina hoort.
+     Gebruik <code>{title}</code> en <code>{summary}</code> als plaatshouders.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="save_prompt">
+    <textarea name="llm_prompt" rows="12" style="width:100%;font-family:monospace;font-size:0.85em"
+              >{{ llm_prompt or default_prompt }}</textarea>
+    <div class="btn-group mt-1">
+      <button type="submit" class="btn btn-primary">Prompt opslaan</button>
+      <button type="submit" form="reset-form" class="btn">Reset naar standaard</button>
+    </div>
+  </form>
+  <form id="reset-form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="reset_prompt">
+  </form>
+</div>
+
+{% endblock %}

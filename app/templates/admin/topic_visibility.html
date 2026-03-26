@@ -1,0 +1,39 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Onderwerp-zichtbaarheid{% endblock %}
+{% block content %}
+
+<h1>Onderwerp-zichtbaarheid</h1>
+<p>Vink aan in welke secties een onderwerp als filter zichtbaar is. Dit heeft geen invloed op tagging of inhoud.</p>
+
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div style="overflow-x:auto">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Onderwerp</th>
+          {% for flag, label in sections %}
+            <th style="text-align:center;white-space:nowrap">{{ label }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for topic in topics %}
+          <tr>
+            <td>{{ topic.name }}</td>
+            {% for flag, label in sections %}
+              <td style="text-align:center">
+                <input type="checkbox"
+                       name="{{ flag }}_{{ topic.id }}"
+                       {% if topic|attr(flag) %}checked{% endif %}>
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <button type="submit" class="btn btn-primary mt-1">Opslaan</button>
+</form>
+
+{% endblock %}

@@ -137,3 +137,69 @@ def get_html(url: str, source=None, skip_cache: bool = False) -> str | None:
 
     write_cache(url, html, rendered=render_js)
     return html
+
+
+def conditional_fetch(url: str, source) -> tuple[str | None, bool]:
+    """
+    Fetch a URL using HTTP conditional GET for non-JS sources.
+
+    Sends If-None-Match / If-Modified-Since headers based on values stored
+    on the source object.  On 304 the disk-cached HTML is returned unchanged.
+    On 200 the new HTML is written to the disk cache and the source object's
+    http_etag / http_last_modified are updated (caller must commit).
+
+    Returns (html, changed):
+      - html:    page HTML (or None on error)
+      - changed: True if the server returned a fresh 200, False on 304 / no change
+
+    For render_js sources falls back to a normal unconditional Playwright fetch.
+    """
+    render_js = getattr(source, "render_js", False)
+
+    if render_js:
+        html = render_with_playwright(
+            url,
+            getattr(source, "cookie_accept_selector", None) or None,
+        )
+        if html is None:
+            return None, False
+        write_cache(url, html, rendered=True)
+        return html, True  # can't detect 304 via Playwright
+
+    headers = dict(REQUEST_HEADERS)
+    etag = getattr(source, "http_etag", None)
+    last_modified = getattr(source, "http_last_modified", None)
+    if etag:
+        headers["If-None-Match"] = etag
+    if last_modified:
+        headers["If-Modified-Since"] = last_modified
+
+    try:
+        resp = requests.get(url, timeout=REQUEST_TIMEOUT, headers=headers)
+    except Exception as exc:
+        logger.warning("Could not fetch %s: %s", url, exc)
+        return None, False
+
+    if resp.status_code == 304:
+        logger.debug("304 Not Modified: %s — using cached HTML", url)
+        cached = read_cache(url, rendered=False)
+        return cached, False
+
+    try:
+        resp.raise_for_status()
+    except Exception as exc:
+        logger.warning("HTTP error fetching %s: %s", url, exc)
+        return None, False
+
+    html = resp.text
+    write_cache(url, html, rendered=False)
+
+    # Update conditional GET tokens on the source (caller must db.session.commit)
+    new_etag = resp.headers.get("ETag")
+    new_lm = resp.headers.get("Last-Modified")
+    if new_etag is not None:
+        source.http_etag = new_etag
+    if new_lm is not None:
+        source.http_last_modified = new_lm
+
+    return html, True

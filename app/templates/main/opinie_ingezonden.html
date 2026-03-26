@@ -6,7 +6,7 @@
   <h1>Uw stuk is ingezonden ✓</h1>
 
   <p>
-    Bedankt, <strong>{{ opinion.pen_name }}</strong>. Uw opiniestuk
+    Bedankt, <strong>{{ opinion.pen_name }}</strong>. Uw ingezonden stuk
     <em>"{{ opinion.title }}"</em> is ontvangen en wacht op redactionele beoordeling.
   </p>
 
@@ -24,7 +24,7 @@
     </p>
   </div>
 
-  <p><a href="{{ url_for('main.opinie_list') }}">← Terug naar alle opinies</a></p>
+  <p><a href="{{ url_for('main.ingezonden_list') }}">← Terug naar alle ingezonden stukken</a></p>
 </article>
 
 {% endblock %}

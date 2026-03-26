@@ -1,0 +1,41 @@
+{#
+  Topic filter bar with two-stage expand.
+  Expects from calling context:
+    section_endpoint  — Flask endpoint string, e.g. 'main.lokaal'
+    active_topic      — currently selected Topic or None
+    topics_top        — always-visible list (up to TOPIC_SIDEBAR_TOP)
+    topics_section    — hidden list, revealed on first "…" press
+    topics_all        — hidden list, revealed on second "…" press
+#}
+<div class="topic-filter">
+  <a href="{{ url_for(section_endpoint) }}"
+     {% if not active_topic %}class="active"{% endif %}>Alle</a>
+
+  {% for topic in topics_top %}
+    <a href="{{ url_for(section_endpoint, topic=topic.id) }}"
+       {% if active_topic and active_topic.id == topic.id %}class="active"{% endif %}>
+      {{ topic.name }}
+    </a>
+  {% endfor %}
+
+  {% for topic in topics_section %}
+    <a href="{{ url_for(section_endpoint, topic=topic.id) }}"
+       class="tf-overflow tf-sect{% if active_topic and active_topic.id == topic.id %} active{% endif %}"
+       hidden>
+      {{ topic.name }}
+    </a>
+  {% endfor %}
+
+  {% for topic in topics_all %}
+    <a href="{{ url_for(section_endpoint, topic=topic.id) }}"
+       class="tf-overflow tf-all{% if active_topic and active_topic.id == topic.id %} active{% endif %}"
+       hidden>
+      {{ topic.name }}
+    </a>
+  {% endfor %}
+
+  {% if topics_section or topics_all %}
+    <button class="topic-more-btn" data-tf-state="0"
+            onclick="topicFilterExpand(this)">…</button>
+  {% endif %}
+</div>

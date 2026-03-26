@@ -88,10 +88,13 @@ def fetch_source(source: Source) -> int:
 
 def fetch_all_active(app) -> None:
     """Fetch all active sources. Designed to be called from scheduler."""
+    from .clustering import cluster_new_articles
     with app.app_context():
         sources = Source.query.filter_by(active=True).all()
-        for source in sources:
-            fetch_source(source)
+        total_new = sum(fetch_source(source) for source in sources)
+    if total_new:
+        logger.info("Fetch round: %d new items — running clustering immediately", total_new)
+        cluster_new_articles(app)
 
 
 def _fetch_rss(source: Source) -> int:
@@ -315,13 +318,23 @@ def _fetch_agenda(source: Source) -> int:
     """
     Fetch an agenda/event listing page and extract structured Event objects.
     Deduplicates by title + start_time.
-    Skips LLM extraction entirely when the page HTML hasn't changed since last fetch.
+
+    Uses HTTP conditional GET (If-None-Match / If-Modified-Since) for non-JS
+    sources to skip the download entirely when the server returns 304.
+    Falls back to a content-hash comparison as a second guard against redundant
+    LLM calls when the server doesn't support conditional GET.
     """
     import hashlib
     from ..services import extractor as ext
+    from .browser import conditional_fetch
 
-    html = _get_html(source.base_url, source)
+    html, changed = conditional_fetch(source.base_url, source)
     if not html:
+        return 0
+
+    if not changed:
+        # 304 from server — no new content
+        logger.debug("Agenda 304 Not Modified for %s — skipping", source.base_url)
         return 0
 
     page_hash = hashlib.sha256(html.encode("utf-8", errors="replace")).hexdigest()

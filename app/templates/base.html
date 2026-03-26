@@ -16,7 +16,7 @@
 
   <div class="site-title-overlay" aria-hidden="true">
     <span class="overlay-title">{{ site_name }}</span>
-    <span class="overlay-subtitle">de saaiste krant van Nederland</span>
+    <span class="overlay-subtitle">de saaiste krant van {{ ['Nederland', 'Gelderland'] | random }}</span>
   </div>
 
   {# ── Utility bar ──────────────────────────────────────────────────────────── #}
@@ -60,6 +60,19 @@
     </div>
 
   </div>
+  <script>
+    function topicFilterExpand(btn) {
+      var state = parseInt(btn.dataset.tfState, 10);
+      var filter = btn.closest('.topic-filter');
+      if (state === 0) {
+        filter.querySelectorAll('.tf-sect').forEach(function(e) { e.hidden = false; });
+        btn.dataset.tfState = '1';
+      } else {
+        filter.querySelectorAll('.tf-all').forEach(function(e) { e.hidden = false; });
+        btn.hidden = true;
+      }
+    }
+  </script>
   <script>
     (function() {
       var NAV_PER_PAGE = 25;
@@ -106,10 +119,11 @@
               stroke-linecap="round"/>
       </svg>
     </a>
-
     <nav class="site-nav" aria-label="Hoofdnavigatie">
       <a href="{{ url_for('main.index') }}"
-         {% if request.endpoint == 'main.index' %}class="active"{% endif %}>{{ site_town }}</a>
+         {% if request.endpoint == 'main.index' %}class="active"{% endif %}>Voorpagina</a>
+      <a href="{{ url_for('main.lokaal') }}"
+         {% if request.endpoint in ('main.lokaal', 'main.lokaal_redirect') %}class="active"{% endif %}>{{ site_town }}</a>
       <a href="{{ url_for('main.alles') }}"
          {% if request.endpoint == 'main.alles' %}class="active"{% endif %}>Alles</a>
       <a href="{{ url_for('main.regio') }}"
@@ -120,12 +134,12 @@
          {% if request.endpoint == 'main.nationaal' %}class="active"{% endif %}>Nationaal</a>
       <a href="{{ url_for('main.internationaal') }}"
          {% if request.endpoint == 'main.internationaal' %}class="active"{% endif %}>Internationaal</a>
-      <a href="{{ url_for('main.stories') }}"
-         {% if request.endpoint and 'story' in request.endpoint %}class="active"{% endif %}>Verhalen</a>
+      <a href="{{ url_for('main.redactie') }}"
+         {% if request.endpoint and 'redactie' in request.endpoint %}class="active"{% endif %}>Redactie</a>
       <a href="{{ url_for('main.events') }}"
          {% if request.endpoint and 'event' in request.endpoint %}class="active"{% endif %}>Agenda</a>
-      <a href="{{ url_for('main.opinie_list') }}"
-         {% if request.endpoint and 'opinie' in request.endpoint %}class="active"{% endif %}>Opinie</a>
+      <a href="{{ url_for('main.ingezonden_list') }}"
+         {% if request.endpoint and 'ingezonden' in request.endpoint %}class="active"{% endif %}>Ingezonden</a>
       <a href="{{ url_for('main.about') }}"
          {% if request.endpoint == 'main.about' %}class="active"{% endif %}>Over ons</a>
     </nav>
