@@ -67,6 +67,24 @@
     </section>
   {% endif %}
 
+  {# Vector similarity: related articles #}
+  {% if similar_articles %}
+    <section class="article-detail-section">
+      <h2>Vergelijkbare artikelen</h2>
+      <ul class="similar-article-list">
+        {% for a, score in similar_articles %}
+          <li>
+            <div class="similar-title-row">
+              <span class="similar-score">{{ "%.0f%%"|format(score * 100) }}</span>
+              <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.title }}</a>
+            </div>
+            <p class="similar-summary">{{ a.summary }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
   {# Same URL from other sources #}
   {% if same_url_others %}
     <section class="article-detail-section">

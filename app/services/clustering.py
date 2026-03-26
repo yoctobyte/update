@@ -43,13 +43,13 @@ def cluster_new_articles(app) -> None:
 
 
 def _process_article(article: Article, lookback: datetime) -> None:
-    embedding_bytes = _pack_embedding(article.embedding)
+    embedding_bytes = _normalize_embedding(article.embedding)
 
-    # KNN query against article_embeddings virtual table, scoped to lookback window
+    # KNN query against normalized embeddings, scoped to lookback window
     rows = db.session.execute(
         db.text("""
             SELECT ae.article_id, ae.distance
-            FROM article_embeddings ae
+            FROM article_embeddings_norm ae
             JOIN articles a ON a.id = ae.article_id
             WHERE ae.embedding MATCH :emb
               AND ae.article_id != :aid
@@ -140,6 +140,100 @@ def _create_new_story(article: Article) -> None:
     article.stories.append(story)
     db.session.commit()
     logger.debug("Created new story %d for article %d", story.id, article.id)
+
+
+def _normalize_embedding(raw_bytes: bytes) -> bytes:
+    """Return L2-normalized version of raw float32 embedding bytes."""
+    import math
+    n = len(raw_bytes) // 4
+    floats = struct.unpack(f"{n}f", raw_bytes)
+    norm = math.sqrt(sum(f * f for f in floats))
+    if norm == 0:
+        return raw_bytes
+    normalized = tuple(f / norm for f in floats)
+    return struct.pack(f"{n}f", *normalized)
+
+
+def find_similar_articles(article: Article, limit: int = 10, exclude_ids: set = None):
+    """Return [(Article, similarity_score), ...] ordered by descending similarity.
+
+    Uses article_embeddings_norm (unit-normalized vectors) so distances are in
+    [0, 2] and _cosine_to_similarity gives clean [0, 1] scores.
+    Same-URL duplicates are excluded in SQL. Additional IDs (e.g. story siblings
+    already shown elsewhere) can be passed via exclude_ids.
+    Returns an empty list if the article has no embedding.
+    """
+    if not article.embedding:
+        return []
+    excluded = exclude_ids or set()
+    embedding_bytes = _normalize_embedding(article.embedding)
+    rows = db.session.execute(
+        db.text("""
+            SELECT ae.article_id, ae.distance
+            FROM article_embeddings_norm ae
+            JOIN articles a ON a.id = ae.article_id
+            WHERE ae.embedding MATCH :emb
+              AND ae.article_id != :aid
+              AND a.url != :url
+              AND a.summary IS NOT NULL
+              AND k = 20
+            ORDER BY ae.distance
+        """),
+        {"emb": embedding_bytes, "aid": article.id, "url": article.url},
+    ).fetchall()
+
+    result = []
+    for row in rows:
+        if row.article_id in excluded:
+            continue
+        neighbor = db.session.get(Article, row.article_id)
+        if neighbor:
+            result.append((neighbor, _cosine_to_similarity(row.distance)))
+        if len(result) >= limit:
+            break
+    return sorted(result, key=lambda x: x[1], reverse=True)
+
+
+def search_by_text(query: str, limit: int = 50):
+    """Embed query and return [(Article, similarity_score), ...] sorted by descending similarity.
+
+    Uses article_embeddings_norm. URL-deduplicates results so the same story
+    from multiple sources only appears once (highest-scoring copy kept).
+    """
+    import struct
+    from .embedder import embed_text
+
+    arr = embed_text(query)
+    if arr is None:
+        return []
+
+    packed = struct.pack(f"{len(arr)}f", *arr)
+    rows = db.session.execute(
+        db.text("""
+            SELECT ae.article_id, ae.distance
+            FROM article_embeddings_norm ae
+            JOIN articles a ON a.id = ae.article_id
+            WHERE ae.embedding MATCH :emb
+              AND a.summary IS NOT NULL
+              AND k = 70
+            ORDER BY ae.distance
+        """),
+        {"emb": packed},
+    ).fetchall()
+
+    seen_urls: set = set()
+    result = []
+    for row in rows:
+        neighbor = db.session.get(Article, row.article_id)
+        if not neighbor:
+            continue
+        if neighbor.url in seen_urls:
+            continue
+        seen_urls.add(neighbor.url)
+        result.append((neighbor, _cosine_to_similarity(row.distance)))
+        if len(result) >= limit:
+            break
+    return result
 
 
 def untie_article_from_story(article_id: int, story_id: int) -> bool:

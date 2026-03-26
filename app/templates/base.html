@@ -49,6 +49,15 @@
               title="Hippie" aria-pressed="false">✿</button>
     </div>
 
+    <div class="util-group util-search-group">
+      <form action="{{ url_for('main.zoeken') }}" method="get" class="util-search-form">
+        <input type="search" name="q" class="util-search-input"
+               value="{{ request.args.get('q', '') if request.endpoint == 'main.zoeken' else '' }}"
+               placeholder="Zoeken…" aria-label="Zoeken" autocomplete="off">
+        <button type="submit" class="util-btn" title="Zoeken">🔍</button>
+      </form>
+    </div>
+
     <div class="util-group util-nav-group">
       <button class="util-btn util-nav-btn" id="nav-prev" title="Vorige pagina" aria-label="Vorige pagina">&#8249;</button>
       <button class="util-btn util-nav-btn" id="nav-next" title="Volgende pagina" aria-label="Volgende pagina">&#8250;</button>

@@ -237,12 +237,20 @@ def article_detail(article_id):
     from ...models import StoryMergeLog
     merge_logs = article.merge_logs.order_by(StoryMergeLog.created_at.desc()).all()
 
+    # Vector similarity: 10 most related articles
+    # Exclude story siblings (already in "Gerelateerde verhalen") and same-URL copies
+    from ...services.clustering import find_similar_articles
+    sibling_ids = {a.id for articles in related_per_story.values() for a in articles}
+    sibling_ids |= {a.id for a in same_url_others}
+    similar_articles = find_similar_articles(article, limit=10, exclude_ids=sibling_ids)
+
     return render_template(
         "main/article_detail.html",
         article=article,
         same_url_others=same_url_others,
         related_per_story=related_per_story,
         merge_logs=merge_logs,
+        similar_articles=similar_articles,
     )
 
 
@@ -580,6 +588,26 @@ def opinie_insturen_redirect():
 @bp.route("/opinie/bewerken/<token>")
 def opinie_bewerken_redirect(token):
     return redirect(url_for("main.ingezonden_bewerken", token=token), 301)
+
+
+# ── Search / Zoeken ───────────────────────────────────────────────────────────
+
+@bp.route("/zoeken")
+def zoeken():
+    query = request.args.get("q", "").strip()
+    results = []
+    sources_by_url = {}
+    if query:
+        from ...services.clustering import search_by_text
+        articles_and_scores = search_by_text(query, limit=50)
+        results = articles_and_scores
+        sources_by_url = _sources_by_url([a for a, _ in articles_and_scores])
+    return render_template(
+        "main/zoeken.html",
+        query=query,
+        results=results,
+        sources_by_url=sources_by_url,
+    )
 
 
 # ── About / Over ons ──────────────────────────────────────────────────────────

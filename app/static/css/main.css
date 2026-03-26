@@ -237,6 +237,66 @@ h1, h2, h3, h4 {
 .util-nav-btn { font-size: 1.1rem; padding: 0 6px; }
 .util-nav-group { margin-left: auto !important; border-left: none; }
 
+.util-search-form {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.util-search-input {
+  height: 22px;
+  width: 130px;
+  padding: 0 6px;
+  border: 1px solid var(--c-border);
+  border-radius: 3px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: system-ui, sans-serif;
+  font-size: 0.78rem;
+  outline: none;
+  transition: border-color 0.15s, width 0.2s;
+}
+.util-search-input:focus {
+  border-color: var(--c-accent);
+  width: 180px;
+}
+
+.search-page-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.search-page-input {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  background: var(--c-surface);
+  color: var(--c-text);
+  font-family: system-ui, sans-serif;
+  font-size: 1rem;
+  outline: none;
+}
+.search-page-input:focus { border-color: var(--c-accent); }
+.search-page-btn {
+  padding: 0.45rem 1.1rem;
+  border: 1px solid var(--c-accent);
+  border-radius: 4px;
+  background: var(--c-accent);
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.search-page-btn:hover { opacity: 0.85; }
+.search-meta {
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+  color: var(--c-text-muted);
+  margin: 0.5rem 0 1rem;
+  padding: 0 0.25rem;
+}
+
 
 /* ── 4. Site header & nav ────────────────────────────────────────────────── */
 
@@ -814,6 +874,37 @@ a.tag:hover { background: var(--c-accent); color: #fff; text-decoration: none; }
   white-space: pre-wrap;
   max-height: 40rem;
   overflow-y: auto;
+}
+
+.similar-article-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.similar-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.similar-score {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  min-width: 2.8rem;
+  flex-shrink: 0;
+}
+.similar-title-row a {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.similar-summary {
+  margin: 0.15rem 0 0 3.3rem;
+  font-size: 0.85rem;
+  color: var(--c-text-muted);
+  line-height: 1.4;
 }
 
 .related-story { margin-bottom: 1.2rem; }

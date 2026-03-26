@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{% if query %}{{ query }} — Zoeken{% else %}Zoeken{% endif %}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Zoeken</h1>
+  <form action="{{ url_for('main.zoeken') }}" method="get" class="search-page-form">
+    <input type="search" name="q" class="search-page-input"
+           value="{{ query }}" placeholder="Zoek op onderwerp, trefwoord…"
+           autofocus autocomplete="off" aria-label="Zoeken">
+    <button type="submit" class="search-page-btn">Zoeken</button>
+  </form>
+</div>
+
+{% if query %}
+  <p class="search-meta">
+    {% if results %}
+      {{ results|length }} resultaten voor <em>{{ query }}</em>
+    {% else %}
+      Geen resultaten voor <em>{{ query }}</em>
+    {% endif %}
+  </p>
+
+  <div class="article-list">
+    {% for article, score in results %}
+      <article class="article-card">
+        <h2 class="article-title">
+          <a href="{{ url_for('main.article_detail', article_id=article.id) }}">{{ article.title }}</a>
+        </h2>
+
+        {% set desc = article.summary or article.short_text %}
+        {% if desc %}
+          <a href="{{ url_for('main.article_detail', article_id=article.id) }}" class="article-snippet-link">
+            <p class="article-snippet">{{ desc }}</p>
+          </a>
+        {% endif %}
+
+        <div class="article-footer">
+          <div class="article-sources">
+            {% for src in sources_by_url.get(article.url, [article.source]) %}
+              <a href="{{ article.url }}" target="_blank" rel="noopener"
+                 title="{{ src.name }}" class="source-favicon-link">
+                <img src="{{ url_for('main.source_favicon', source_id=src.id) }}"
+                     class="source-favicon" alt="{{ src.name }}"
+                     width="16" height="16" loading="lazy">
+              </a>
+            {% endfor %}
+            <span class="geo-badge geo-{{ article.geo_scope }}">{{ article.geo_scope }}</span>
+            <time class="article-date">
+              {%- if article.published_at -%}
+                {{ article.published_at.strftime('%-d %b %H:%M') }}
+              {%- elif article.created_at -%}
+                {{ article.created_at.strftime('%-d %b %H:%M') }}
+              {%- endif -%}
+            </time>
+          </div>
+          <a href="{{ article.url }}" target="_blank" rel="noopener"
+             class="ext-indicator" title="Lees op {{ article.source.name }}">↗</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
