@@ -22,7 +22,7 @@
         <span class="month">{{ event.start_time.strftime('%b') }}</span>
       </div>
       <div class="event-info">
-        <h2><a href="{{ url_for('main.event_detail', event_id=event.id) }}">{{ event.title }}</a></h2>
+        <h2><a href="{{ event_url(event) }}">{{ event.title }}</a></h2>
         <div class="event-meta">
           {% if event.location %}<span>📍 {{ event.location }}</span>{% endif %}
           <time>{{ event.start_time.strftime('%d %B %Y, %H:%M') }}</time>

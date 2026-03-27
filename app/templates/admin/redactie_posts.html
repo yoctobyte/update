@@ -13,6 +13,8 @@
       <th>Onderwerp</th>
       <th>Titel</th>
       <th>Gepind</th>
+      <th title="Zichtbaar in sectiepagina's">Zichtbaar</th>
+      <th title="Verborgen op /redactie">Verborgen</th>
       <th></th>
     </tr>
   </thead>
@@ -21,7 +23,7 @@
       <tr>
         <td class="meta-muted">{{ post.published_at.strftime('%-d %b %Y') }}</td>
         <td><span class="tag">{{ post.topic }}</span></td>
-        <td><a href="{{ url_for('main.redactie_post', post_id=post.id) }}" target="_blank">{{ post.title }}</a></td>
+        <td><a href="{{ redactie_url(post) }}" target="_blank">{{ post.title }}</a></td>
         <td>
           {% if post.is_pin_active() %}
             <span class="badge-ok">✓ pos {{ post.pin_position }}</span>
@@ -30,6 +32,26 @@
           {% else %}
             —
           {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('admin.redactie_post_quick_save', post_id=post.id) }}"
+                class="inline-toggle-form">
+            <input type="hidden" name="hide" value="{{ '1' if post.hide else '' }}">
+            <input type="checkbox" name="visible" value="1"
+                   {% if post.visible %}checked{% endif %}
+                   onchange="this.form.submit()"
+                   title="Zichtbaar in sectiepagina's">
+          </form>
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('admin.redactie_post_quick_save', post_id=post.id) }}"
+                class="inline-toggle-form">
+            <input type="hidden" name="visible" value="{{ '1' if post.visible else '' }}">
+            <input type="checkbox" name="hide" value="1"
+                   {% if post.hide %}checked{% endif %}
+                   onchange="this.form.submit()"
+                   title="Verborgen op /redactie">
+          </form>
         </td>
         <td>
           <a href="{{ url_for('admin.redactie_post_edit', post_id=post.id) }}" class="btn btn-small">Bewerk</a>
@@ -41,7 +63,7 @@
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="5">Geen berichten.</td></tr>
+      <tr><td colspan="7">Geen berichten.</td></tr>
     {% endfor %}
   </tbody>
 </table>

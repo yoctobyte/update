@@ -869,6 +869,8 @@ def redactie_post_new():
             image_alt    = request.form.get("image_alt", "").strip() or None,
             footer       = request.form.get("footer", "van de redactie").strip() or "van de redactie",
             published_at = datetime.fromisoformat(request.form["published_at"]),
+            visible      = bool(request.form.get("visible")),
+            hide         = bool(request.form.get("hide")),
             pinned       = bool(request.form.get("pinned")),
             pin_position = int(request.form.get("pin_position") or 0),
             pin_expires_at = (
@@ -920,6 +922,8 @@ def redactie_post_edit(post_id):
         post.image_alt    = request.form.get("image_alt", "").strip() or None
         post.footer       = request.form.get("footer", "van de redactie").strip() or "van de redactie"
         post.published_at = datetime.fromisoformat(request.form["published_at"])
+        post.visible      = bool(request.form.get("visible"))
+        post.hide         = bool(request.form.get("hide"))
         post.pinned       = bool(request.form.get("pinned"))
         post.pin_position = int(request.form.get("pin_position") or 0)
         post.pin_expires_at = (
@@ -936,6 +940,65 @@ def redactie_post_edit(post_id):
                            now=post.published_at.strftime("%Y-%m-%dT%H:%M"),
                            topic_suggestions=_TOPIC_SUGGESTIONS,
                            pin_sections=_PIN_SECTIONS)
+
+
+@bp.route("/redactie/<int:post_id>/snel-opslaan", methods=["POST"])
+@login_required
+def redactie_post_quick_save(post_id):
+    """Toggle visible / hide from the overview table checkboxes."""
+    post = RedactionalPost.query.get_or_404(post_id)
+    post.visible = bool(request.form.get("visible"))
+    post.hide    = bool(request.form.get("hide"))
+    db.session.commit()
+    return redirect(url_for("admin.redactie_posts"))
+
+
+@bp.route("/redactie/<int:post_id>/maak-artikel", methods=["POST"])
+@login_required
+def redactie_post_make_article(post_id):
+    """Create a normal Article from this editorial post."""
+    import hashlib
+    from ...config import Config
+    from ...blueprints.main.views import slugify
+
+    post = RedactionalPost.query.get_or_404(post_id)
+    site_url = Config.SITE_URL or "https://localhost"
+
+    # Find or create the built-in "Redactie" source
+    source = Source.query.filter_by(name="Redactie").first()
+    if not source:
+        source = Source(
+            name="Redactie",
+            base_url=site_url,
+            active=True,
+            type="rss",
+        )
+        db.session.add(source)
+        db.session.flush()  # get source.id before using it
+    post_url = f"{site_url}/redactie/{post.id}/{slugify(post.title or '')}"
+    url_hash = hashlib.sha256(f"{post_url}|{source.id}".encode()).hexdigest()
+
+    # Don't create duplicates
+    existing = Article.query.filter_by(hash=url_hash).first()
+    if existing:
+        flash("Er bestaat al een artikel voor dit bericht.", "warning")
+        return redirect(url_for("admin.redactie_post_edit", post_id=post_id))
+
+    article = Article(
+        source_id       = source.id,
+        url             = post_url,
+        title           = post.title,
+        summary         = post.content or "",
+        extracted_text  = post.content or "",
+        published_at    = post.published_at,
+        hash            = url_hash,
+        geo_scope       = "local",
+        skip_extraction = True,
+    )
+    db.session.add(article)
+    db.session.commit()
+    flash(f"Artikel #{article.id} aangemaakt.", "success")
+    return redirect(url_for("admin.redactie_post_edit", post_id=post_id))
 
 
 @bp.route("/redactie/<int:post_id>/verwijder", methods=["POST"])

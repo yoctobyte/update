@@ -20,6 +20,10 @@ class RedactionalPost(db.Model):
     created_at   = db.Column(db.DateTime, nullable=False,
                              default=lambda: datetime.now(timezone.utc))
 
+    # Visibility
+    visible  = db.Column(db.Boolean, nullable=False, default=True)   # inject into section feeds
+    hide     = db.Column(db.Boolean, nullable=False, default=False)  # hide from /redactie pages
+
     # Pinning
     pinned          = db.Column(db.Boolean, nullable=False, default=False)
     pin_position    = db.Column(db.Integer, nullable=True, default=0)
@@ -40,7 +44,7 @@ class RedactionalPost(db.Model):
             return False
         if self.pin_expires_at is None:
             return True
-        return datetime.now(timezone.utc) < self.pin_expires_at
+        return datetime.utcnow() < self.pin_expires_at
 
     def __repr__(self):
         return f"<RedactionalPost {self.id} {self.title[:40]}>"

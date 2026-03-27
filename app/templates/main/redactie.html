@@ -13,11 +13,11 @@
       </div>
 
       <h2 class="article-title">
-        <a href="{{ url_for('main.redactie_post', post_id=post.id) }}">{{ post.title }}</a>
+        <a href="{{ redactie_url(post) }}">{{ post.title }}</a>
       </h2>
 
       {% if post.image_path %}
-        <a href="{{ url_for('main.redactie_post', post_id=post.id) }}" class="redactional-thumb-link">
+        <a href="{{ redactie_url(post) }}" class="redactional-thumb-link">
           <img src="{{ url_for('main.uploaded_file', filename=post.image_path) }}"
                alt="{{ post.image_alt or post.title }}"
                class="redactional-thumb" loading="lazy">
@@ -25,7 +25,7 @@
       {% endif %}
 
       {% if post.content %}
-        <a href="{{ url_for('main.redactie_post', post_id=post.id) }}" class="article-snippet-link">
+        <a href="{{ redactie_url(post) }}" class="article-snippet-link">
           <p class="article-snippet">{{ post.content | striptags | truncate(200) }}</p>
         </a>
       {% endif %}
@@ -35,7 +35,7 @@
           <span class="redactional-footer-text">{{ post.footer }}</span>
           <time class="article-date">{{ post.published_at.strftime('%-d %b %Y') }}</time>
         </div>
-        <a href="{{ url_for('main.redactie_post', post_id=post.id) }}"
+        <a href="{{ redactie_url(post) }}"
            class="ext-indicator" title="Lees volledig bericht">↗</a>
       </div>
     </article>

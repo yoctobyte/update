@@ -1,9 +1,20 @@
 import json
+import re
+import unicodedata
 from flask import render_template, request, abort, redirect, url_for, flash, current_app, send_file, Response
 from . import bp
 from ...models import Article, Story, Event, Topic, Opinion, ContactMessage, Source, RedactionalPost
 from ...extensions import db, limiter
 from ...config import Config
+
+
+def slugify(text: str) -> str:
+    """Return a URL-safe slug derived from text."""
+    text = unicodedata.normalize("NFKD", text or "")
+    text = text.encode("ascii", "ignore").decode("ascii")
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    return text.strip("-") or "artikel"
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -60,6 +71,7 @@ def _inject_pins(articles, section: str, page: int) -> list:
         .filter(
             getattr(RedactionalPost, flag) == True,
             RedactionalPost.pinned == True,
+            RedactionalPost.visible == True,
             db.or_(
                 RedactionalPost.pin_expires_at.is_(None),
                 RedactionalPost.pin_expires_at > now,
@@ -212,7 +224,7 @@ def _lokaal_response():
         .filter_by(active=True)
         .filter(Article.geo_scope == "local")
         .filter(Article.summary.isnot(None))
-        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+        .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
     )
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
@@ -244,9 +256,8 @@ def lokaal_redirect():
     """Backward-compat alias: redirect to the canonical /<town_slug> URL."""
     town = current_app.jinja_env.globals.get("site_town", "").lower()
     if town:
-        qs = request.query_string.decode()
-        target = f"/{town}" + (f"?{qs}" if qs else "")
-        return redirect(target, 301)
+        params = {k: v for k, v in request.args.items() if k in ("topic_id", "page", "per_page")}
+        return redirect(url_for("main.lokaal", **params), 301)
     return _lokaal_response()
 
 
@@ -269,7 +280,16 @@ def index():
 
 
 @bp.route("/nieuws/<int:article_id>")
-def article_detail(article_id):
+def article_detail_redirect(article_id):
+    article = Article.query.filter_by(id=article_id).first_or_404()
+    return redirect(
+        url_for("main.article_detail", article_id=article_id, slug=slugify(article.title or "")),
+        301,
+    )
+
+
+@bp.route("/nieuws/<int:article_id>/<slug>")
+def article_detail(article_id, slug):
     article = Article.query.filter_by(id=article_id).filter(Article.summary.isnot(None)).first_or_404()
 
     # Other fetched copies of the same URL (from different sources)
@@ -326,7 +346,7 @@ def regio():
         .filter(Article.geo_scope == "region")
         # Only publish once the AI rewrite is done
         .filter(Article.summary.isnot(None))
-        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+        .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
     )
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
@@ -362,7 +382,7 @@ def provincie():
         .filter_by(active=True)
         .filter(Article.geo_scope == "province")
         .filter(Article.summary.isnot(None))
-        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+        .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
     )
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
@@ -397,7 +417,7 @@ def nationaal():
         .filter_by(active=True)
         .filter(Article.geo_scope == "national")
         .filter(Article.summary.isnot(None))
-        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+        .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
     )
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
@@ -432,7 +452,7 @@ def internationaal():
         .filter_by(active=True)
         .filter(Article.geo_scope == "intl")
         .filter(Article.summary.isnot(None))
-        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+        .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
     )
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
@@ -466,7 +486,7 @@ def alles():
         .join(Article.source)
         .filter_by(active=True)
         .filter(Article.summary.isnot(None))
-        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+        .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
     )
     if topic_id:
         query = query.filter(Article.topics.any(id=topic_id))
@@ -495,6 +515,7 @@ def redactie():
     page = request.args.get("page", 1, type=int)
     pagination = (
         RedactionalPost.query
+        .filter_by(hide=False)
         .order_by(RedactionalPost.published_at.desc())
         .paginate(page=page, per_page=25, error_out=False)
     )
@@ -502,8 +523,19 @@ def redactie():
 
 
 @bp.route("/redactie/<int:post_id>")
-def redactie_post(post_id):
+def redactie_post_redirect(post_id):
     post = RedactionalPost.query.get_or_404(post_id)
+    return redirect(
+        url_for("main.redactie_post", post_id=post_id, slug=slugify(post.title or "")),
+        301,
+    )
+
+
+@bp.route("/redactie/<int:post_id>/<slug>")
+def redactie_post(post_id, slug):
+    post = RedactionalPost.query.get_or_404(post_id)
+    if post.hide:
+        abort(404)
     return render_template("main/redactie_post.html", post=post)
 
 
@@ -540,19 +572,28 @@ def events():
         query = query.filter(Event.topics.any(id=topic_id))
 
     pagination = query.paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
-    topics = _section_topics("alles")
-    active_topic = Topic.query.get(topic_id) if topic_id else None
+    active_topic = db.session.get(Topic, topic_id) if topic_id else None
+    topics_top, topics_section, topics_all = _topic_groups("alles", active_topic)
 
     return render_template(
         "main/events.html",
         pagination=pagination,
-        topics=topics,
+        topics=topics_top + topics_section + topics_all,
         active_topic=active_topic,
     )
 
 
 @bp.route("/agenda/<int:event_id>")
-def event_detail(event_id):
+def event_detail_redirect(event_id):
+    event = Event.query.get_or_404(event_id)
+    return redirect(
+        url_for("main.event_detail", event_id=event_id, slug=slugify(event.title or "")),
+        301,
+    )
+
+
+@bp.route("/agenda/<int:event_id>/<slug>")
+def event_detail(event_id, slug):
     event = Event.query.get_or_404(event_id)
     return render_template("main/event_detail.html", event=event)
 
@@ -764,10 +805,13 @@ def source_favicon(source_id):
             timeout=5,
             headers={"User-Agent": "LokaalNieuws/1.0"},
             allow_redirects=True,
+            stream=True,
         )
-        if resp.status_code == 200 and resp.content:
-            cache_path.write_bytes(resp.content)
-            return send_file(cache_path, mimetype=resp.headers.get("Content-Type", "image/x-icon"))
+        if resp.status_code == 200:
+            content = resp.raw.read(256 * 1024 + 1, decode_content=True)
+            if content and len(content) <= 256 * 1024:
+                cache_path.write_bytes(content)
+                return send_file(cache_path, mimetype=resp.headers.get("Content-Type", "image/x-icon"))
     except Exception:
         pass
 
@@ -781,4 +825,82 @@ def robots_txt():
     from pathlib import Path
     robots_file = Path(current_app.root_path).parent / "robots.txt"
     text = robots_file.read_text(encoding="utf-8") if robots_file.exists() else "User-agent: *\nDisallow: /admin/\n"
+    site_url = Config.SITE_URL or request.url_root.rstrip("/")
+    text = text.rstrip() + f"\n\nSitemap: {site_url}/sitemap.xml\n"
     return Response(text, mimetype="text/plain")
+
+
+# ── sitemap.xml ───────────────────────────────────────────────────────────────
+
+@bp.route("/sitemap.xml")
+def sitemap_xml():
+    from datetime import datetime, timezone
+    from xml.sax.saxutils import escape
+
+    site_url = Config.SITE_URL or request.url_root.rstrip("/")
+    town_slug = current_app.jinja_env.globals.get("site_town", "").lower()
+
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    def _iso(dt):
+        if dt is None:
+            return now_iso
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.strftime("%Y-%m-%d")
+
+    urls = []
+
+    # Static pages
+    static_pages = [
+        ("/",              "daily",   "1.0"),
+        (f"/{town_slug}",  "daily",   "0.9"),
+        ("/regio",         "daily",   "0.8"),
+        ("/provincie",     "daily",   "0.8"),
+        ("/nationaal",     "daily",   "0.7"),
+        ("/internationaal","daily",   "0.7"),
+        ("/alles",         "daily",   "0.7"),
+        ("/redactie",      "weekly",  "0.8"),
+        ("/agenda",        "daily",   "0.7"),
+        ("/ingezonden",    "weekly",  "0.6"),
+        ("/over-ons",      "monthly", "0.5"),
+        ("/zoeken",        "weekly",  "0.4"),
+    ]
+    for path, freq, pri in static_pages:
+        urls.append((escape(site_url + path), now_iso, freq, pri))
+
+    # Redactional posts
+    posts = RedactionalPost.query.order_by(RedactionalPost.published_at.desc()).all()
+    for p in posts:
+        urls.append((
+            escape(f"{site_url}/redactie/{p.id}"),
+            _iso(p.published_at),
+            "never",
+            "0.7",
+        ))
+
+    # Published opinions
+    opinions = (
+        Opinion.query
+        .filter_by(status="published")
+        .order_by(Opinion.published_at.desc())
+        .all()
+    )
+    for o in opinions:
+        urls.append((
+            escape(f"{site_url}/ingezonden/{o.id}"),
+            _iso(o.published_at),
+            "never",
+            "0.5",
+        ))
+
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for loc, lastmod, freq, pri in urls:
+        lines.append(
+            f"  <url><loc>{loc}</loc><lastmod>{lastmod}</lastmod>"
+            f"<changefreq>{freq}</changefreq><priority>{pri}</priority></url>"
+        )
+    lines.append("</urlset>")
+
+    return Response("\n".join(lines), mimetype="application/xml")

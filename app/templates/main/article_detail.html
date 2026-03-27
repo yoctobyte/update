@@ -57,7 +57,7 @@
               <li>
                 <img src="{{ url_for('main.source_favicon', source_id=a.source.id) }}"
                      class="source-favicon" alt="{{ a.source.name }}" width="14" height="14">
-                <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.title }}</a>
+                <a href="{{ article_url(a) }}">{{ a.title }}</a>
                 <span class="meta-muted">— {{ a.source.name }}</span>
               </li>
             {% endfor %}
@@ -76,7 +76,7 @@
           <li>
             <div class="similar-title-row">
               <span class="similar-score">{{ "%.0f%%"|format(score * 100) }}</span>
-              <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.title }}</a>
+              <a href="{{ article_url(a) }}">{{ a.title }}</a>
             </div>
             <p class="similar-summary">{{ a.summary }}</p>
           </li>
@@ -94,7 +94,7 @@
           <li>
             <img src="{{ url_for('main.source_favicon', source_id=a.source.id) }}"
                  class="source-favicon" alt="{{ a.source.name }}" width="16" height="16">
-            <a href="{{ url_for('main.article_detail', article_id=a.id) }}">{{ a.source.name }}</a>
+            <a href="{{ article_url(a) }}">{{ a.source.name }}</a>
             <span class="meta-muted">— gezien {{ a.created_at.strftime('%-d %b %Y') }}</span>
           </li>
         {% endfor %}

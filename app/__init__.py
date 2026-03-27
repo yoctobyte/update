@@ -37,7 +37,10 @@ def create_app(town: str = None) -> Flask:
     # Session cookie security
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    app.config["SESSION_COOKIE_SECURE"] = False  # set True if serving over HTTPS
+    app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
+
+    # Upload size limit — prevents DoS via large file uploads
+    app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8 MB
 
     # CSRF
     app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
@@ -69,6 +72,7 @@ def create_app(town: str = None) -> Flask:
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    csrf.exempt(main_bp)
 
     # Markdown filter
     import markdown as _md
@@ -86,9 +90,24 @@ def create_app(town: str = None) -> Flask:
         except Exception:
             pass
     site_town = _town_cfg.get("site_town", active_town.title())
+    from .blueprints.main.views import slugify as _slugify
+    from flask import url_for as _url_for
+
+    def _article_url(article):
+        return _url_for("main.article_detail", article_id=article.id, slug=_slugify(article.title or ""))
+
+    def _redactie_url(post):
+        return _url_for("main.redactie_post", post_id=post.id, slug=_slugify(post.title or ""))
+
+    def _event_url(event):
+        return _url_for("main.event_detail", event_id=event.id, slug=_slugify(event.title or ""))
+
     app.jinja_env.globals.update(
         site_name=_town_cfg.get("site_name", "Lokaal Nieuws"),
         site_town=site_town,
+        article_url=_article_url,
+        redactie_url=_redactie_url,
+        event_url=_event_url,
     )
 
     # Register /<town_slug> as the canonical local news URL.

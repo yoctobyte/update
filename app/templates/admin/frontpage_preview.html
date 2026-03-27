@@ -12,7 +12,7 @@
   {% for article in articles %}
     <article class="article-card">
       <h2 class="article-title">
-        <a href="{{ url_for('main.article_detail', article_id=article.id) }}" target="_blank">{{ article.title }}</a>
+        <a href="{{ article_url(article) }}" target="_blank">{{ article.title }}</a>
       </h2>
 
       {% set desc = article.summary or article.short_text %}

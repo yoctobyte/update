@@ -26,7 +26,7 @@
   {# ── Inhoud (markdown) ─────────────────────────────────────────────────── #}
   <div class="form-row form-row--full">
     <label for="content">Inhoud <span class="form-hint">(markdown)</span></label>
-    <textarea id="content" name="content" rows="14"
+    <textarea id="content" name="content" rows="22"
               class="redactie-content-area">{{ post.content if post else '' }}</textarea>
   </div>
 
@@ -77,6 +77,21 @@
            value="{{ now }}" required>
   </div>
 
+  {# ── Zichtbaarheid ─────────────────────────────────────────────────────── #}
+  <fieldset class="form-fieldset">
+    <legend>Zichtbaarheid</legend>
+    <label class="form-checkbox">
+      <input type="checkbox" name="visible" value="1"
+             {% if post is none or post.visible %}checked{% endif %}>
+      Zichtbaar in sectiepagina's <span class="form-hint">(pinning werkt alleen als dit aan staat)</span>
+    </label>
+    <label class="form-checkbox">
+      <input type="checkbox" name="hide" value="1"
+             {% if post and post.hide %}checked{% endif %}>
+      Verborgen op /redactie <span class="form-hint">(volledig verborgen voor bezoekers)</span>
+    </label>
+  </fieldset>
+
   {# ── Pinning ───────────────────────────────────────────────────────────── #}
   <fieldset class="form-fieldset">
     <legend>Pinnen</legend>
@@ -121,8 +136,13 @@
     <button type="submit" class="btn">Opslaan</button>
     <a href="{{ url_for('admin.redactie_posts') }}" class="btn btn-secondary">Annuleer</a>
     {% if post %}
-      <a href="{{ url_for('main.redactie_post', post_id=post.id) }}" target="_blank"
+      <a href="{{ redactie_url(post) }}" target="_blank"
          class="btn btn-secondary">Bekijk ↗</a>
+      <form method="post" action="{{ url_for('admin.redactie_post_make_article', post_id=post.id) }}"
+            style="display:inline"
+            onsubmit="return confirm('Artikel aanmaken van dit bericht?')">
+        <button type="submit" class="btn btn-secondary">Maak artikel</button>
+      </form>
     {% endif %}
   </div>
 </form>

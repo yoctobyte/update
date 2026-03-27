@@ -90,11 +90,14 @@ class Config:
 
     # Story clustering thresholds
     STORY_AUTOMERGE_THRESHOLD: float = float(
-        os.environ.get("STORY_AUTOMERGE_THRESHOLD", "0.99")
+        os.environ.get("STORY_AUTOMERGE_THRESHOLD", "0.92")
     )
     STORY_SUGGEST_THRESHOLD: float = float(
         os.environ.get("STORY_SUGGEST_THRESHOLD", "0.85")
     )
+
+    # Public base URL — used for sitemap / absolute links (no trailing slash)
+    SITE_URL: str = os.environ.get("SITE_URL", "")
 
     # Scheduling
     FETCH_INTERVAL_MINUTES: int = int(os.environ.get("FETCH_INTERVAL_MINUTES", "15"))

@@ -13,13 +13,13 @@
     {% else %}
     <article class="article-card">
       <h2 class="article-title">
-        <a href="{{ url_for('main.article_detail', article_id=article.id) }}">{{ article.title }}</a>
+        <a href="{{ article_url(article) }}">{{ article.title }}</a>
       </h2>
 
       {# Description: prefer AI summary, fall back to short_text #}
       {% set desc = article.summary or article.short_text %}
       {% if desc %}
-        <a href="{{ url_for('main.article_detail', article_id=article.id) }}" class="article-snippet-link">
+        <a href="{{ article_url(article) }}" class="article-snippet-link">
           <p class="article-snippet">{{ desc }}</p>
         </a>
       {% endif %}
