@@ -405,6 +405,111 @@ def evaluate_frontpage_worthy(title: str, summary: str, custom_prompt: str | Non
         return None
 
 
+def parse_event_raw(text: str) -> dict | None:
+    """Parse arbitrary text (pasted content, fetched URL body) into a structured event dict.
+    Returns keys: title, start_time, end_time, location, description, organizer,
+    contact_info, source_url — or None on failure.
+    start_time/end_time are ISO 8601 strings or null.
+    """
+    prompt = f"""Je krijgt een stuk tekst over een evenement (kopieerplak, webpagina of iets anders).
+Extraheer de evenementgegevens als JSON met de volgende sleutels:
+- title (verplicht)
+- start_time (ISO 8601 formaat, bijv. "2026-04-15T19:30:00", of null)
+- end_time (ISO 8601 formaat of null)
+- location (adres of plaatsnaam, of null)
+- description (korte omschrijving max 3 zinnen, of null)
+- organizer (organiserende partij, of null)
+- contact_info (e-mail, telefoon of website, of null)
+- source_url (alleen als er een duidelijke website-URL in de tekst staat, anders null)
+
+Geef ALLEEN de JSON, geen uitleg.
+
+Tekst:
+{text[:4000]}"""
+
+    result = _call(
+        [{"role": "user", "content": prompt}],
+        model=Config.OPENAI_MODEL_DEFAULT,
+        max_tokens=400,
+    )
+    if not result:
+        return None
+    try:
+        data = json.loads(_strip_fences(result))
+        if not data.get("title"):
+            return None
+        return data
+    except (json.JSONDecodeError, TypeError):
+        logger.warning("parse_event_raw returned invalid JSON: %s", result)
+        return None
+
+
+def parse_event_image(image_bytes: bytes, mime_type: str) -> dict | None:
+    """Parse an event flyer/image using the OpenAI vision API.
+    No local OCR model needed — processing is server-side.
+    Returns same structure as parse_event_raw, or None on failure.
+    """
+    import base64
+    b64 = base64.b64encode(image_bytes).decode()
+
+    prompt_text = """Dit is een afbeelding van een evenementaankondiging of flyer.
+Extraheer de evenementgegevens als JSON met de volgende sleutels:
+- title (verplicht)
+- start_time (ISO 8601 formaat, bijv. "2026-04-15T19:30:00", of null)
+- end_time (ISO 8601 formaat of null)
+- location (adres of plaatsnaam, of null)
+- description (korte omschrijving max 3 zinnen, of null)
+- organizer (organiserende partij, of null)
+- contact_info (e-mail, telefoon of website, of null)
+- source_url (null)
+
+Geef ALLEEN de JSON, geen uitleg."""
+
+    messages = [{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": prompt_text},
+            {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64}"}},
+        ],
+    }]
+
+    client = _get_client()
+    if _is_verbose():
+        logger.info("LLM → [%s] vision: event image parse (%d bytes)", Config.OPENAI_MODEL_DEFAULT, len(image_bytes))
+
+    for attempt in range(3):
+        try:
+            response = client.chat.completions.create(
+                model=Config.OPENAI_MODEL_DEFAULT,
+                messages=messages,
+                max_tokens=400,
+                temperature=0.2,
+            )
+            result = response.choices[0].message.content.strip()
+            if _is_verbose():
+                logger.info("LLM ← %s", result[:200].replace("\n", " "))
+            break
+        except Exception as exc:
+            status = getattr(exc, "status_code", None)
+            if status == 400:
+                logger.error("OpenAI bad request (vision, skipping): %s", exc)
+                return None
+            logger.warning("OpenAI vision call failed (attempt %d): %s", attempt + 1, exc)
+            if attempt < 2:
+                time.sleep(2 ** attempt)
+    else:
+        return None
+
+    try:
+        data = json.loads(_strip_fences(result))
+        if not data.get("title"):
+            return None
+        return data
+    except (json.JSONDecodeError, TypeError):
+        logger.warning("parse_event_image returned invalid JSON: %s", result)
+        return None
+
+
 def evaluate_source(url: str, html_sample: str) -> dict | None:
     """
     Ask the LLM whether a URL looks like a useful local news source.

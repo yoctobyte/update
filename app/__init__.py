@@ -100,6 +100,8 @@ def create_app(town: str = None) -> Flask:
         return _url_for("main.redactie_post", post_id=post.id, slug=_slugify(post.title or ""))
 
     def _event_url(event):
+        if getattr(event, "is_redactie", False):
+            return _url_for("main.redactie_event_detail", event_id=event.id, slug=_slugify(event.title or ""))
         return _url_for("main.event_detail", event_id=event.id, slug=_slugify(event.title or ""))
 
     app.jinja_env.globals.update(

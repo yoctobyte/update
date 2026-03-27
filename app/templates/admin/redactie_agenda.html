@@ -1,0 +1,47 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Redactie Agenda{% endblock %}
+{% block content %}
+<div class="admin-section-header">
+  <h1>Redactie Agenda</h1>
+  <a href="{{ url_for('admin.redactie_agenda_new') }}" class="btn">+ Nieuw evenement</a>
+</div>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Datum</th>
+      <th>Titel</th>
+      <th>Locatie</th>
+      <th>Gepubliceerd</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for event in events %}
+      <tr>
+        <td class="meta-muted">{{ event.start_time.strftime('%-d %b %Y %H:%M') }}</td>
+        <td><a href="{{ event_url(event) }}" target="_blank">{{ event.title }}</a></td>
+        <td class="meta-muted">{{ event.location or '—' }}</td>
+        <td>
+          {% if event.published %}
+            <span class="badge-ok">Ja</span>
+          {% else %}
+            <span class="badge-wait">Concept</span>
+          {% endif %}
+        </td>
+        <td class="actions">
+          <a href="{{ url_for('admin.redactie_agenda_edit', event_id=event.id) }}" class="btn btn-small">Bewerk</a>
+          <form method="post" action="{{ url_for('admin.redactie_agenda_delete', event_id=event.id) }}"
+                style="display:inline"
+                onsubmit="return confirm('Evenement verwijderen?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-small btn-danger">Verwijder</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Nog geen redactionele evenementen.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

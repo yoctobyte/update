@@ -1,0 +1,118 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}{{ 'Evenement bewerken' if event else 'Redactie evenement toevoegen' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Evenement bewerken' if event else 'Redactie evenement toevoegen' }}</h1>
+
+{# ── Import section (new events only) ──────────────────────────────────────── #}
+{% if not event %}
+<section class="form-section">
+  <h2>Importeren</h2>
+  <p class="meta-muted">Plak een URL, tekst of upload een afbeelding (flyer). De AI parseert de gegevens en vult het formulier hieronder voor je in.</p>
+
+  <form method="post" enctype="multipart/form-data" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="step" value="parse">
+
+    <div class="field">
+      <label for="import_url">URL</label>
+      <input type="url" id="import_url" name="import_url" placeholder="https://…">
+    </div>
+    <div class="field">
+      <label for="import_text">Tekst (kopieerplak)</label>
+      <textarea id="import_text" name="import_text" rows="4" placeholder="Plak hier aankondigingstekst…"></textarea>
+    </div>
+    <div class="field">
+      <label for="import_image">Afbeelding / flyer</label>
+      <input type="file" id="import_image" name="import_image" accept="image/*">
+      <small class="meta-muted">Wordt via OpenAI vision herkend — geen lokale OCR nodig.</small>
+    </div>
+    <button type="submit" class="btn">Analyseer →</button>
+  </form>
+</section>
+<hr>
+{% endif %}
+
+{# ── Event detail form ─────────────────────────────────────────────────────── #}
+{# Helper: prefer prefilled (after parse), then event (edit mode), then blank #}
+{% macro val(field, fallback='') %}
+  {%- if prefilled and prefilled[field] is defined -%}{{ prefilled[field] }}
+  {%- elif event and event[field] is defined -%}{{ event[field] or fallback }}
+  {%- else -%}{{ fallback }}
+  {%- endif -%}
+{% endmacro %}
+
+<section class="form-section">
+  {% if prefilled and prefilled.title %}
+    <h2>Controleer en sla op</h2>
+    <p class="meta-muted">Controleer de geparseerde gegevens en pas aan waar nodig.</p>
+  {% else %}
+    <h2>Gegevens</h2>
+  {% endif %}
+
+  <form method="post" class="form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="step" value="save">
+
+    <div class="field">
+      <label for="title">Titel <span class="required">*</span></label>
+      <input type="text" id="title" name="title" required
+             value="{{ prefilled.title if prefilled and prefilled.title else (event.title if event else '') }}">
+    </div>
+    <div class="field">
+      <label for="description">Omschrijving</label>
+      <textarea id="description" name="description" rows="4">{{ prefilled.description if prefilled and prefilled.description else (event.description if event else '') }}</textarea>
+    </div>
+    <div class="field">
+      <label for="location">Locatie</label>
+      <input type="text" id="location" name="location"
+             value="{{ prefilled.location if prefilled and prefilled.location else (event.location if event else '') }}">
+    </div>
+    <div class="field">
+      <label for="start_time">Begintijd <span class="required">*</span></label>
+      <input type="datetime-local" id="start_time" name="start_time" required
+             value="{{ prefilled.start_time if prefilled and prefilled.start_time else (event.start_time.strftime('%Y-%m-%dT%H:%M') if event else '') }}">
+    </div>
+    <div class="field">
+      <label for="end_time">Eindtijd (optioneel)</label>
+      <input type="datetime-local" id="end_time" name="end_time"
+             value="{{ prefilled.end_time if prefilled and prefilled.end_time else (event.end_time.strftime('%Y-%m-%dT%H:%M') if event and event.end_time else '') }}">
+    </div>
+    <div class="field">
+      <label for="organizer">Organisator</label>
+      <input type="text" id="organizer" name="organizer"
+             value="{{ prefilled.organizer if prefilled and prefilled.organizer else (event.organizer if event else '') }}">
+    </div>
+    <div class="field">
+      <label for="contact_info">Contactinformatie</label>
+      <input type="text" id="contact_info" name="contact_info"
+             value="{{ prefilled.contact_info if prefilled and prefilled.contact_info else (event.contact_info if event else '') }}">
+    </div>
+    <div class="field">
+      <label for="source_url">Bron-URL</label>
+      <input type="url" id="source_url" name="source_url"
+             value="{{ prefilled.source_url if prefilled and prefilled.source_url else (event.source_url if event else '') }}">
+    </div>
+    <div class="field">
+      <label>
+        <input type="checkbox" name="published" value="1"
+               {% if event and event.published %}checked{% elif not event %}checked{% endif %}>
+        Gepubliceerd (zichtbaar in agenda)
+      </label>
+    </div>
+    <div class="field">
+      <label>Onderwerpen</label>
+      <div class="checkbox-group">
+        {% for topic in topics %}
+          <label>
+            <input type="checkbox" name="topic_ids" value="{{ topic.id }}"
+              {% if event and topic in event.topics %}checked{% endif %}>
+            {{ topic.name }}
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+    <button type="submit" class="btn">Opslaan</button>
+    <a href="{{ url_for('admin.redactie_agenda') }}" class="btn btn-secondary">Annuleren</a>
+  </form>
+</section>
+{% endblock %}

@@ -34,3 +34,10 @@ event_articles = db.Table(
     db.Column("article_id", db.Integer, db.ForeignKey("articles.id"), primary_key=True),
     db.Index("ix_event_articles_article_id", "article_id"),
 )
+
+redactie_event_topics = db.Table(
+    "redactie_event_topics",
+    db.Column("redactie_event_id", db.Integer, db.ForeignKey("redactie_events.id"), primary_key=True),
+    db.Column("topic_id", db.Integer, db.ForeignKey("topics.id"), primary_key=True),
+    db.Index("ix_redactie_event_topics_topic_id", "topic_id"),
+)

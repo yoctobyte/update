@@ -10,7 +10,7 @@ from . import bp
 from ...extensions import db, limiter
 from ...models import (
     Source, ExtractionRule, Story, StoryMergeLog,
-    Article, Topic, Event, SuggestedTopic, SiteSetting, RedactionalPost
+    Article, Topic, Event, RedactieEvent, SuggestedTopic, SiteSetting, RedactionalPost
 )
 from ...services import clustering, extractor, llm
 
@@ -1296,6 +1296,168 @@ def frontpage_preview():
         sources_by_url=_sources_by_url(articles),
         count=len(articles),
     )
+
+
+# ── Redactie Agenda ───────────────────────────────────────────────────────────
+
+@bp.route("/redactie-agenda")
+@login_required
+def redactie_agenda():
+    events = RedactieEvent.query.order_by(RedactieEvent.start_time.desc()).all()
+    return render_template("admin/redactie_agenda.html", events=events)
+
+
+def _parse_import_input() -> dict | None:
+    """Fetch/OCR/parse raw admin input (URL, text, or image) into a structured event dict."""
+    from ...services import llm as _llm
+
+    image = request.files.get("import_image")
+    if image and image.filename:
+        image_bytes = image.read()
+        mime_type = image.content_type or "image/jpeg"
+        return _llm.parse_event_image(image_bytes, mime_type)
+
+    url = request.form.get("import_url", "").strip()
+    if url:
+        import httpx
+        from bs4 import BeautifulSoup
+        try:
+            resp = httpx.get(url, timeout=15, follow_redirects=True,
+                             headers={"User-Agent": "lokaalnieuws/1.0"})
+            resp.raise_for_status()
+        except Exception as exc:
+            flash(f"Kon URL niet ophalen: {exc}", "error")
+            return None
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "footer", "header"]):
+            tag.decompose()
+        text = soup.get_text(separator="\n", strip=True)
+        parsed = _llm.parse_event_raw(text)
+        if parsed and not parsed.get("source_url"):
+            parsed["source_url"] = url
+        return parsed
+
+    text = request.form.get("import_text", "").strip()
+    if text:
+        return _llm.parse_event_raw(text)
+
+    return None
+
+
+def _format_dt_local(iso_str: str) -> str:
+    """Convert an ISO 8601 string from the LLM to datetime-local input format."""
+    if not iso_str:
+        return ""
+    try:
+        from dateutil import parser as _dp
+        return _dp.parse(iso_str).strftime("%Y-%m-%dT%H:%M")
+    except Exception:
+        return ""
+
+
+@bp.route("/redactie-agenda/nieuw", methods=["GET", "POST"])
+@login_required
+def redactie_agenda_new():
+    topics = Topic.query.order_by(Topic.name).all()
+    prefilled = {}
+
+    if request.method == "POST":
+        step = request.form.get("step", "save")
+
+        if step == "parse":
+            raw = _parse_import_input()
+            if raw:
+                prefilled = {
+                    "title":        raw.get("title", ""),
+                    "description":  raw.get("description") or "",
+                    "location":     raw.get("location") or "",
+                    "start_time":   _format_dt_local(raw.get("start_time") or ""),
+                    "end_time":     _format_dt_local(raw.get("end_time") or ""),
+                    "organizer":    raw.get("organizer") or "",
+                    "contact_info": raw.get("contact_info") or "",
+                    "source_url":   raw.get("source_url") or "",
+                }
+                if not prefilled["title"]:
+                    flash("Kon geen evenement herkennen in de invoer.", "error")
+                    prefilled = {}
+            return render_template("admin/redactie_agenda_form.html",
+                                   event=None, topics=topics, prefilled=prefilled)
+
+        # step == "save"
+        return _save_redactie_event(None, topics)
+
+    return render_template("admin/redactie_agenda_form.html",
+                           event=None, topics=topics, prefilled=prefilled)
+
+
+@bp.route("/redactie-agenda/<int:event_id>/bewerk", methods=["GET", "POST"])
+@login_required
+def redactie_agenda_edit(event_id):
+    event = db.session.get(RedactieEvent, event_id) or abort(404)
+    topics = Topic.query.order_by(Topic.name).all()
+
+    if request.method == "POST":
+        return _save_redactie_event(event, topics)
+
+    return render_template("admin/redactie_agenda_form.html",
+                           event=event, topics=topics, prefilled={})
+
+
+@bp.route("/redactie-agenda/<int:event_id>/verwijder", methods=["POST"])
+@login_required
+def redactie_agenda_delete(event_id):
+    event = db.session.get(RedactieEvent, event_id) or abort(404)
+    db.session.delete(event)
+    db.session.commit()
+    flash("Evenement verwijderd.", "success")
+    return redirect(url_for("admin.redactie_agenda"))
+
+
+def _save_redactie_event(event, topics):
+    from dateutil import parser as _dp
+
+    title = request.form.get("title", "").strip()
+    if not title:
+        flash("Titel is verplicht.", "error")
+        return render_template("admin/redactie_agenda_form.html",
+                               event=event, topics=topics, prefilled=dict(request.form))
+
+    start_raw = request.form.get("start_time", "").strip()
+    try:
+        start_time = _dp.parse(start_raw)
+    except Exception:
+        flash("Ongeldige begintijd.", "error")
+        return render_template("admin/redactie_agenda_form.html",
+                               event=event, topics=topics, prefilled=dict(request.form))
+
+    end_raw = request.form.get("end_time", "").strip()
+    end_time = None
+    if end_raw:
+        try:
+            end_time = _dp.parse(end_raw)
+        except Exception:
+            pass  # end time is optional; ignore parse errors
+
+    if event is None:
+        event = RedactieEvent()
+        db.session.add(event)
+
+    event.title        = title
+    event.description  = request.form.get("description", "").strip() or None
+    event.location     = request.form.get("location", "").strip() or None
+    event.start_time   = start_time
+    event.end_time     = end_time
+    event.organizer    = request.form.get("organizer", "").strip() or None
+    event.contact_info = request.form.get("contact_info", "").strip() or None
+    event.source_url   = request.form.get("source_url", "").strip() or None
+    event.published    = bool(request.form.get("published"))
+
+    topic_ids = [int(x) for x in request.form.getlist("topic_ids") if x.isdigit()]
+    event.topics = Topic.query.filter(Topic.id.in_(topic_ids)).all() if topic_ids else []
+
+    db.session.commit()
+    flash("Evenement opgeslagen.", "success")
+    return redirect(url_for("admin.redactie_agenda"))
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────

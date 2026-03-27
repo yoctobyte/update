@@ -6,6 +6,8 @@ from .associations import event_topics, event_articles
 class Event(db.Model):
     __tablename__ = "events"
 
+    is_redactie = False  # duck-type alongside RedactieEvent in calendar views
+
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(500), nullable=False)
     description = db.Column(db.Text, nullable=True)

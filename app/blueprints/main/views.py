@@ -3,7 +3,7 @@ import re
 import unicodedata
 from flask import render_template, request, abort, redirect, url_for, flash, current_app, send_file, Response
 from . import bp
-from ...models import Article, Story, Event, Topic, Opinion, ContactMessage, Source, RedactionalPost
+from ...models import Article, Story, Event, RedactieEvent, Topic, Opinion, ContactMessage, Source, RedactionalPost
 from ...extensions import db, limiter
 from ...config import Config
 
@@ -560,18 +560,42 @@ def verhalen_detail_redirect(story_id):
 
 # ── Events ────────────────────────────────────────────────────────────────────
 
+class _SimplePagination:
+    """Minimal pagination object for manually merged querysets."""
+    def __init__(self, items, page, per_page, total):
+        self.items    = items
+        self.page     = page
+        self.per_page = per_page
+        self.total    = total
+        self.pages    = max(1, (total + per_page - 1) // per_page)
+        self.has_prev = page > 1
+        self.has_next = page < self.pages
+        self.prev_num = page - 1
+        self.next_num = page + 1
+
+
 @bp.route("/agenda")
 def events():
     from datetime import datetime
-    page = request.args.get("page", 1, type=int)
+    page     = request.args.get("page", 1, type=int)
+    per_page = min(request.args.get("per_page", 100, type=int), 200)
     topic_id = request.args.get("topic", type=int)
-    now = datetime.utcnow()  # naive UTC — matches how SQLite stores datetimes
+    now      = datetime.utcnow()
 
-    query = Event.query.filter(Event.start_time >= now).order_by(Event.start_time)
+    scraped_q  = Event.query.filter(Event.start_time >= now)
+    redactie_q = RedactieEvent.query.filter(
+        RedactieEvent.published == True,
+        RedactieEvent.start_time >= now,
+    )
     if topic_id:
-        query = query.filter(Event.topics.any(id=topic_id))
+        scraped_q  = scraped_q.filter(Event.topics.any(id=topic_id))
+        redactie_q = redactie_q.filter(RedactieEvent.topics.any(id=topic_id))
 
-    pagination = query.paginate(page=page, per_page=min(request.args.get("per_page", 100, type=int), 200), error_out=False)
+    all_events = sorted(scraped_q.all() + redactie_q.all(), key=lambda e: e.start_time)
+
+    offset     = (page - 1) * per_page
+    pagination = _SimplePagination(all_events[offset:offset + per_page], page, per_page, len(all_events))
+
     active_topic = db.session.get(Topic, topic_id) if topic_id else None
     topics_top, topics_section, topics_all = _topic_groups("alles", active_topic)
 
@@ -595,6 +619,25 @@ def event_detail_redirect(event_id):
 @bp.route("/agenda/<int:event_id>/<slug>")
 def event_detail(event_id, slug):
     event = Event.query.get_or_404(event_id)
+    return render_template("main/event_detail.html", event=event)
+
+
+@bp.route("/agenda/redactie/<int:event_id>")
+def redactie_event_detail_redirect(event_id):
+    event = db.session.get(RedactieEvent, event_id)
+    if not event:
+        abort(404)
+    return redirect(
+        url_for("main.redactie_event_detail", event_id=event_id, slug=slugify(event.title or "")),
+        301,
+    )
+
+
+@bp.route("/agenda/redactie/<int:event_id>/<slug>")
+def redactie_event_detail(event_id, slug):
+    event = db.session.get(RedactieEvent, event_id)
+    if not event or not event.published:
+        abort(404)
     return render_template("main/event_detail.html", event=event)
 
 
