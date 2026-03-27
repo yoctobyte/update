@@ -818,6 +818,17 @@ def source_favicon(source_id):
     return Response(_FAVICON_PLACEHOLDER, mimetype="image/svg+xml")
 
 
+# ── Site favicon ──────────────────────────────────────────────────────────────
+
+@bp.route("/favicon.ico")
+def favicon():
+    from pathlib import Path
+    ico = Path(current_app.static_folder) / "favicon.ico"
+    if not ico.exists():
+        abort(404)
+    return send_file(ico, mimetype="image/x-icon")
+
+
 # ── robots.txt ────────────────────────────────────────────────────────────────
 
 @bp.route("/robots.txt")

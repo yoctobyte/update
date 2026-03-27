@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   {# site.js runs synchronously to apply stored theme/font before first paint #}
   <script src="{{ url_for('static', filename='js/site.js') }}"></script>
