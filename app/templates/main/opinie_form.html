@@ -19,8 +19,6 @@
   {% endif %}
 
   <form class="opinion-form" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
     <div class="field">
       <label for="pen_name">Schuilnaam / naam <span aria-hidden="true">*</span></label>
       <input type="text" id="pen_name" name="pen_name" required

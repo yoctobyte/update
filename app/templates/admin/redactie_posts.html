@@ -36,6 +36,7 @@
         <td>
           <form method="post" action="{{ url_for('admin.redactie_post_quick_save', post_id=post.id) }}"
                 class="inline-toggle-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="hide" value="{{ '1' if post.hide else '' }}">
             <input type="checkbox" name="visible" value="1"
                    {% if post.visible %}checked{% endif %}
@@ -46,6 +47,7 @@
         <td>
           <form method="post" action="{{ url_for('admin.redactie_post_quick_save', post_id=post.id) }}"
                 class="inline-toggle-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="visible" value="{{ '1' if post.visible else '' }}">
             <input type="checkbox" name="hide" value="1"
                    {% if post.hide %}checked{% endif %}

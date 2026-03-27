@@ -75,7 +75,7 @@ def evaluate_pending(app) -> int:
             .filter(Article.summary.isnot(None))
             .filter(Article.frontpage_worthy.is_(None))
             .filter(Article.published_at >= cutoff)
-            .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+            .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
             .limit(15)
             .all()
         )
@@ -120,7 +120,7 @@ def update_frontpage(app, dry_run: bool = False) -> list:
             )
             .filter(Article.geo_scope.in_(["local", "region", "province", "national"]) |
                     Article.geo_scope.is_(None))
-            .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+            .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
             .all()
         )
 
@@ -153,12 +153,13 @@ def update_frontpage(app, dry_run: bool = False) -> list:
 
 
 def get_current_frontpage():
-    """Return Article objects currently on the front page, newest first."""
+    """Return Article objects currently on the front page, newest first (max 100)."""
     return (
         Article.query
         .join(FrontpageItem, FrontpageItem.article_id == Article.id)
         .filter(FrontpageItem.removed_at.is_(None))
-        .order_by(Article.published_at.desc().nullslast(), Article.created_at.desc())
+        .order_by(db.func.coalesce(Article.published_at, Article.created_at).desc())
+        .limit(100)
         .all()
     )
 

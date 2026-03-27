@@ -1,5 +1,6 @@
 """APScheduler job definitions."""
 import logging
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -8,6 +9,22 @@ from ..config import Config
 logger = logging.getLogger(__name__)
 
 _template_mtimes: dict = {}  # path -> mtime, persists between job runs
+
+
+def _wrap(job_id, func):
+    """Wrap a job function with start/end/error logging."""
+    def wrapper(*args, **kwargs):
+        logger.info("JOB START  [%s]", job_id)
+        t0 = datetime.now()
+        try:
+            func(*args, **kwargs)
+            elapsed = (datetime.now() - t0).total_seconds()
+            logger.info("JOB DONE   [%s] in %.1fs", job_id, elapsed)
+        except Exception:
+            elapsed = (datetime.now() - t0).total_seconds()
+            logger.error("JOB ERROR  [%s] after %.1fs\n%s", job_id, elapsed, traceback.format_exc())
+    wrapper.__name__ = func.__name__
+    return wrapper
 
 
 def _check_templates(app) -> None:
@@ -72,15 +89,17 @@ def register_jobs(scheduler, app) -> None:
 
     scheduler.add_job(
         id="fetch_all_sources",
-        func=fetch_all_active,
+        func=_wrap("fetch_all_sources", fetch_all_active),
         args=[app],
         trigger="interval",
         minutes=Config.FETCH_INTERVAL_MINUTES,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
     scheduler.add_job(
         id="extract_pending",
-        func=extract_all_pending,
+        func=_wrap("extract_pending", extract_all_pending),
         args=[app],
         trigger="interval",
         minutes=5,
@@ -90,7 +109,7 @@ def register_jobs(scheduler, app) -> None:
     )
     scheduler.add_job(
         id="embed_pending",
-        func=embed_pending,
+        func=_wrap("embed_pending", embed_pending),
         args=[app],
         trigger="interval",
         minutes=Config.EMBED_INTERVAL_MINUTES,
@@ -100,7 +119,7 @@ def register_jobs(scheduler, app) -> None:
     )
     scheduler.add_job(
         id="cluster_stories",
-        func=cluster_new_articles,
+        func=_wrap("cluster_stories", cluster_new_articles),
         args=[app],
         trigger="interval",
         minutes=Config.CLUSTER_INTERVAL_MINUTES,
@@ -110,15 +129,17 @@ def register_jobs(scheduler, app) -> None:
     )
     scheduler.add_job(
         id="fetch_watched_urls",
-        func=fetch_all_watched,
+        func=_wrap("fetch_watched_urls", fetch_all_watched),
         args=[app],
         trigger="interval",
         minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
     scheduler.add_job(
         id="tag_untagged",
-        func=tag_untagged_articles,
+        func=_wrap("tag_untagged", tag_untagged_articles),
         args=[app],
         trigger="interval",
         minutes=30,
@@ -128,7 +149,7 @@ def register_jobs(scheduler, app) -> None:
     )
     scheduler.add_job(
         id="refresh_topic_counts",
-        func=_refresh_topic_counts,
+        func=_wrap("refresh_topic_counts", _refresh_topic_counts),
         args=[app],
         trigger="interval",
         hours=24,
@@ -138,7 +159,7 @@ def register_jobs(scheduler, app) -> None:
     )
     scheduler.add_job(
         id="check_templates",
-        func=_check_templates,
+        func=_wrap("check_templates", _check_templates),
         args=[app],
         trigger="interval",
         seconds=30,
@@ -147,7 +168,7 @@ def register_jobs(scheduler, app) -> None:
     )
     scheduler.add_job(
         id="evaluate_frontpage",
-        func=evaluate_pending,
+        func=_wrap("evaluate_frontpage", evaluate_pending),
         args=[app],
         trigger="interval",
         minutes=30,
@@ -157,7 +178,7 @@ def register_jobs(scheduler, app) -> None:
     )
     scheduler.add_job(
         id="update_frontpage",
-        func=update_frontpage,
+        func=_wrap("update_frontpage", update_frontpage),
         args=[app],
         trigger="interval",
         minutes=30,
@@ -165,4 +186,6 @@ def register_jobs(scheduler, app) -> None:
         misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
-    logger.info("Scheduler jobs registered.")
+    logger.info("Scheduler jobs registered: %d jobs", len(scheduler.get_jobs()))
+    for job in scheduler.get_jobs():
+        logger.info("  %-25s  next: %s", job.id, job.next_run_time)
