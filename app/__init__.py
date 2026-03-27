@@ -121,15 +121,24 @@ def create_app(town: str = None) -> Flask:
     from .cli.commands import register_commands
     register_commands(app)
 
-    # Start scheduler (not in testing, not in Werkzeug reloader parent process).
-    # In debug mode Werkzeug forks: the parent watches files and the child serves.
-    # Both processes import the app, so without this guard the scheduler (and
-    # heavy background jobs like model loading) would run twice.
+    # Start scheduler only when actually serving requests.
+    # Skip in:
+    #   - Flask CLI commands (flask db upgrade, flask shell, etc.) — detected via
+    #     sys.argv[0] name being "flask"; the scheduler would run jobs during
+    #     migrations and exit on atexit, wasting resources.
+    #   - Werkzeug reloader *parent* process (forks a child to serve; only the
+    #     child sets WERKZEUG_RUN_MAIN=true and should run the scheduler).
+    #   - Test runs.
+    import sys as _sys
+    from pathlib import Path as _Path
+    _is_flask_cli = bool(_sys.argv) and _Path(_sys.argv[0]).stem == "flask"
     _is_reloader_parent = (
         os.environ.get("FLASK_DEBUG") == "1"
         and not os.environ.get("WERKZEUG_RUN_MAIN")
+        and not _is_flask_cli  # CLI already excluded above
     )
-    if not app.config.get("TESTING") and not os.environ.get("TESTING") and not _is_reloader_parent:
+    if (not app.config.get("TESTING") and not os.environ.get("TESTING")
+            and not _is_flask_cli and not _is_reloader_parent):
         import atexit
         from .services.scheduler_jobs import register_jobs
         register_jobs(scheduler, app)

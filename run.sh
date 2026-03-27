@@ -82,7 +82,7 @@ while IFS='|' read -r TOWN PORT HASH; do
     if [ "$DEBUG" = "1" ]; then
         echo "[$TOWN] Starting on port $PORT (Werkzeug debug)..."
         #in debug mode, run single town at a time. keep console attached.
-        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD_HASH="$HASH" FLASK_DEBUG=1 VERBOSE="$VERBOSE" python wsgi.py 
+        TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD_HASH="$HASH" VERBOSE="$VERBOSE" python wsgi.py
     else
         echo "[$TOWN] Starting on port $PORT (gunicorn)..."
         TOWN="$TOWN" PORT="$PORT" ADMIN_PASSWORD_HASH="$HASH" FLASK_DEBUG=0 VERBOSE="$VERBOSE" \
