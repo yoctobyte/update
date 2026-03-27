@@ -734,6 +734,7 @@ main {
   font-size: 0.78rem;
 }
 a.tag:hover { background: var(--c-accent); color: #fff; text-decoration: none; }
+.tag-redactie { background: var(--c-accent); color: #fff; }
 
 .pagination {
   display: flex;
@@ -1332,6 +1333,7 @@ body.admin .page-header h1 { margin: 0; }
 .redactional-thumb-link { display: block; margin: 0.6rem 0; }
 .redactional-thumb {
   width: 100%;
+  aspect-ratio: 16/9;
   max-height: 260px;
   object-fit: cover;
   border-radius: 4px;
@@ -1430,4 +1432,16 @@ body.admin .page-header h1 { margin: 0; }
   max-height: 280px;
   border-radius: 4px;
   object-fit: contain;
+}
+
+/* ── Redactie post form ────────────────────────────────────────────────────── */
+.redactie-form { max-width: 900px; }
+.redactie-content-area {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  font-family: monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
 }
