@@ -734,7 +734,6 @@ main {
   font-size: 0.78rem;
 }
 a.tag:hover { background: var(--c-accent); color: #fff; text-decoration: none; }
-.tag-redactie { background: var(--c-accent); color: #fff; }
 
 .pagination {
   display: flex;

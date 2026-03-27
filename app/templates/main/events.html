@@ -27,7 +27,7 @@
           {% if event.location %}<span>📍 {{ event.location }}</span>{% endif %}
           <time>{{ event.start_time.strftime('%d %B %Y, %H:%M') }}</time>
           {% if event.organizer %}<span>{{ event.organizer }}</span>{% endif %}
-          {% if event.is_redactie %}<span class="tag tag-redactie">Redactie</span>{% endif %}
+          {% if event.is_redactie %}<span class="meta-muted">{{ site_name }}</span>{% endif %}
         </div>
         {% if event.topics %}
           <div class="event-topics">

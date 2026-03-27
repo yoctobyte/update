@@ -1456,6 +1456,19 @@ def _save_redactie_event(event, topics):
     event.topics = Topic.query.filter(Topic.id.in_(topic_ids)).all() if topic_ids else []
 
     db.session.commit()
+
+    # If no external source_url was provided, point source_url at our own
+    # canonical event page — the ID is only available after the first commit.
+    if not event.source_url:
+        from ..main.views import slugify as _slugify
+        event.source_url = url_for(
+            "main.redactie_event_detail",
+            event_id=event.id,
+            slug=_slugify(event.title or ""),
+            _external=True,
+        )
+        db.session.commit()
+
     flash("Evenement opgeslagen.", "success")
     return redirect(url_for("admin.redactie_agenda"))
 

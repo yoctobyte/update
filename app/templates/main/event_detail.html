@@ -11,8 +11,11 @@
     {% if event.location %}<p><strong>Locatie:</strong> {{ event.location }}</p>{% endif %}
     {% if event.organizer %}<p><strong>Organisator:</strong> {{ event.organizer }}</p>{% endif %}
     {% if event.contact_info %}<p><strong>Contact:</strong> {{ event.contact_info }}</p>{% endif %}
-    {% if event.source_url %}<p><a href="{{ event.source_url }}" target="_blank" rel="noopener">Meer informatie →</a></p>{% endif %}
-    {% if event.is_redactie %}<p class="meta-muted"><span class="tag tag-redactie">Redactie</span> Toegevoegd door de redactie.</p>{% endif %}
+    {% if event.is_redactie %}
+      <p class="meta-muted">Bron: {{ site_name }}</p>
+    {% elif event.source_url %}
+      <p><a href="{{ event.source_url }}" target="_blank" rel="noopener">Meer informatie →</a></p>
+    {% endif %}
   </div>
 
   {% if event.description %}
