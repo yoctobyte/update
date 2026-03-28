@@ -1444,3 +1444,74 @@ body.admin .page-header h1 { margin: 0; }
   line-height: 1.5;
   resize: vertical;
 }
+
+
+/* ── 13. Article density modes ───────────────────────────────────────────── */
+
+/* compact + condensed: strip card box down to a separator strip */
+[data-density="compact"]   .article-card:not(.redactional-card),
+[data-density="condensed"] .article-card:not(.redactional-card) {
+  background:    transparent;
+  border:        none;
+  border-top:    1px solid var(--c-border);
+  border-radius: 0;
+  padding:       0.45rem 0.15rem;
+  box-shadow:    none;
+  transition:    border-color 0.1s;
+  cursor:        pointer;
+}
+[data-density="compact"]   .article-card:not(.redactional-card):hover,
+[data-density="condensed"] .article-card:not(.redactional-card):hover {
+  box-shadow:        none;
+  border-top-color:  var(--c-accent);
+}
+
+[data-density="compact"]   .article-list,
+[data-density="condensed"] .article-list {
+  gap: 0;
+}
+
+/* compact: title only — hide everything else */
+[data-density="compact"] .article-card:not(.redactional-card) .article-snippet-link,
+[data-density="compact"] .article-card:not(.redactional-card) .article-footer,
+[data-density="compact"] .article-card:not(.redactional-card) .article-topics,
+[data-density="compact"] .article-card:not(.redactional-card) .article-stories {
+  display: none;
+}
+
+/* condensed: first sentence only — hide footer, rest of snippet */
+[data-density="condensed"] .article-card:not(.redactional-card) .article-footer,
+[data-density="condensed"] .article-card:not(.redactional-card) .article-topics,
+[data-density="condensed"] .article-card:not(.redactional-card) .article-stories {
+  display: none;
+}
+[data-density="condensed"] .article-card:not(.redactional-card) .rest-of-snippet {
+  display: none;
+}
+
+/* expanded card: restore full card appearance */
+[data-density="compact"]   .article-card.density-expanded,
+[data-density="condensed"] .article-card.density-expanded {
+  background:    var(--c-surface);
+  border:        1px solid var(--c-accent);
+  border-radius: 6px;
+  padding:       1.1rem 1.2rem 0.85rem;
+  box-shadow:    0 3px 12px rgba(0,0,0,0.10);
+  cursor:        default;
+}
+[data-density="compact"] .article-card.density-expanded .article-snippet-link {
+  display: block;
+}
+[data-density="compact"]   .article-card.density-expanded .article-footer,
+[data-density="condensed"] .article-card.density-expanded .article-footer {
+  display: flex;
+}
+[data-density="compact"]   .article-card.density-expanded .article-topics,
+[data-density="compact"]   .article-card.density-expanded .article-stories,
+[data-density="condensed"] .article-card.density-expanded .article-topics,
+[data-density="condensed"] .article-card.density-expanded .article-stories {
+  display: flex;
+}
+[data-density="condensed"] .article-card.density-expanded .rest-of-snippet {
+  display: inline;
+}
