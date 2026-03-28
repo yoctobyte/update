@@ -176,7 +176,7 @@
       }
 
       // Font was reduced → 3+ lines; tighten row gap further
-      nav.style.rowGap = size < startSize ? '0.08em' : '';
+      nav.style.rowGap = size < startSize ? '0' : '';
       nav.style.height = '';
     }
 
