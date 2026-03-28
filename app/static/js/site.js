@@ -153,6 +153,38 @@
       if (!root.classList.contains('mobile-ui')) _closeMenu();
     });
 
+    // ── Nav fit ───────────────────────────────────────────────────────────────
+    // Step font-size down until all nav links wrap within the header height.
+
+    function fitNav() {
+      var header = document.querySelector('.site-header');
+      var nav    = document.querySelector('.site-nav');
+      if (!nav || !header) return;
+
+      nav.style.fontSize = '';           // reset to CSS default
+      nav.style.alignSelf = 'flex-start'; // measure natural wrap height
+
+      var maxH = header.clientHeight;    // 62px fixed
+      var MIN  = 0.58;                   // rem floor (~3 readable lines)
+      var STEP = 0.02;
+      var size = parseFloat(getComputedStyle(nav).fontSize) / 16;
+
+      while (nav.offsetHeight > maxH && size > MIN) {
+        size = Math.round((size - STEP) * 1000) / 1000;
+        nav.style.fontSize = size + 'rem';
+      }
+
+      nav.style.alignSelf = '';          // restore flex stretching
+    }
+
+    fitNav();
+
+    var _navTimer;
+    window.addEventListener('resize', function () {
+      clearTimeout(_navTimer);
+      _navTimer = setTimeout(fitNav, 80);
+    });
+
     // ── TTS (Web Speech API) ──────────────────────────────────────────────────
 
     var ttsBtn = document.getElementById('tts-btn');

@@ -343,6 +343,7 @@ h1, h2, h3, h4 {
   gap: 1.5rem;
   padding: 0 2rem;
   height: 62px;
+  overflow: hidden;
   background: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 70%);
   border: none;
   transition: background 0.25s;
@@ -377,8 +378,11 @@ h1, h2, h3, h4 {
 
 .site-nav {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.5rem;
+  align-content: center;
+  column-gap: 1.5rem;
+  row-gap: 0.25rem;
 }
 .site-nav a {
   color: var(--c-hdr-nav);
@@ -396,11 +400,9 @@ h1, h2, h3, h4 {
   border-bottom-color: var(--c-hdr-text);
 }
 
-/* Collapse nav label on very small screens */
 @media (max-width: 480px) {
-  .site-nav  { gap: 0.8rem; }
-  .site-nav a { font-size: 0.82rem; }
   .site-header { padding: 0 1rem; }
+  .site-nav { column-gap: 0.8rem; }
 }
 
 
