@@ -37,7 +37,7 @@ def create_app(town: str = None) -> Flask:
         _db_path = str((Path(Config.DATA_ROOT) / active_town / "database.db").resolve())
         app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite+pysqlite://"
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "creator": lambda: _sqlite3.connect(f"file:{_db_path}?mode=ro", uri=True)
+            "creator": lambda: _sqlite3.connect(f"file:{_db_path}?mode=ro", uri=True, check_same_thread=False)
         }
     else:
         app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
