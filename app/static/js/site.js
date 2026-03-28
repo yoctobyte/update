@@ -162,19 +162,19 @@
       if (!nav || !header) return;
 
       nav.style.fontSize = '';           // reset to CSS default
-      nav.style.alignSelf = 'flex-start'; // measure natural wrap height
+      nav.style.height   = 'auto';       // let content dictate height
 
       var maxH = header.clientHeight;    // 62px fixed
       var MIN  = 0.58;                   // rem floor (~3 readable lines)
       var STEP = 0.02;
       var size = parseFloat(getComputedStyle(nav).fontSize) / 16;
 
-      while (nav.offsetHeight > maxH && size > MIN) {
+      while (nav.scrollHeight > maxH && size > MIN) {
         size = Math.round((size - STEP) * 1000) / 1000;
         nav.style.fontSize = size + 'rem';
       }
 
-      nav.style.alignSelf = '';          // restore flex stretching
+      nav.style.height = '';
     }
 
     fitNav();
