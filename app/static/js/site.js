@@ -9,6 +9,7 @@
   var THEMES    = ['light', 'dark', 'green', 'hippy'];
   var SIZES     = ['s', 'm', 'l'];
   var DENSITIES = ['compact', 'condensed', 'full'];
+  var SITEMODES = ['mobile', 'auto', 'desktop'];
 
   // ── Theme ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,26 @@
     try { localStorage.setItem('theme', theme); } catch(e) {}
     document.querySelectorAll('.theme-btn').forEach(function(btn) {
       var on = btn.dataset.theme === theme;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  // ── Site mode (mobile / auto / desktop) ──────────────────────────────────────
+
+  function _updateMobileClass(mode) {
+    if (!mode) mode = root.getAttribute('data-site-mode') || 'auto';
+    var narrow = window.innerWidth <= 640;
+    root.classList.toggle('mobile-ui', mode === 'mobile' || (mode === 'auto' && narrow));
+  }
+
+  function applySiteMode(mode) {
+    if (SITEMODES.indexOf(mode) === -1) mode = 'auto';
+    root.setAttribute('data-site-mode', mode);
+    try { localStorage.setItem('site-mode', mode); } catch(e) {}
+    _updateMobileClass(mode);
+    document.querySelectorAll('.sitemode-btn').forEach(function(btn) {
+      var on = btn.dataset.sitemode === mode;
       btn.classList.toggle('active', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
@@ -55,7 +76,9 @@
   try {
     applyTheme(localStorage.getItem('theme') || 'light');
     applyFont(localStorage.getItem('font')   || 'm');
-    var _defDensity = window.innerWidth < 640 ? 'condensed' : 'full';
+    var _siteMode   = localStorage.getItem('site-mode') || 'auto';
+    applySiteMode(_siteMode);
+    var _defDensity = (root.classList.contains('mobile-ui')) ? 'condensed' : 'full';
     applyDensity(localStorage.getItem('density') || _defDensity);
   } catch(e) {}
 
@@ -64,9 +87,10 @@
   document.addEventListener('DOMContentLoaded', function () {
 
     // Re-apply to update button active states now that buttons exist
-    applyTheme(root.getAttribute('data-theme')     || 'light');
-    applyFont(root.getAttribute('data-font')       || 'm');
-    applyDensity(root.getAttribute('data-density') || 'full');
+    applyTheme(root.getAttribute('data-theme')         || 'light');
+    applyFont(root.getAttribute('data-font')           || 'm');
+    applyDensity(root.getAttribute('data-density')     || 'full');
+    applySiteMode(root.getAttribute('data-site-mode')  || 'auto');
 
     document.querySelectorAll('.theme-btn').forEach(function(btn) {
       btn.addEventListener('click', function() { applyTheme(btn.dataset.theme); });
@@ -84,6 +108,49 @@
         });
         window.dispatchEvent(new Event('resize'));
       });
+    });
+
+    // ── Mobile menu ───────────────────────────────────────────────────────────
+
+    var _hamburger = document.getElementById('util-hamburger');
+    var _backdrop  = document.getElementById('menu-backdrop');
+
+    function _closeMenu() {
+      root.classList.remove('menu-open');
+      if (_hamburger) {
+        _hamburger.textContent = '☰';
+        _hamburger.setAttribute('aria-expanded', 'false');
+      }
+    }
+
+    function _openMenu() {
+      root.classList.add('menu-open');
+      if (_hamburger) {
+        _hamburger.textContent = '✕';
+        _hamburger.setAttribute('aria-expanded', 'true');
+      }
+    }
+
+    if (_hamburger) {
+      _hamburger.addEventListener('click', function() {
+        root.classList.contains('menu-open') ? _closeMenu() : _openMenu();
+      });
+    }
+    if (_backdrop) {
+      _backdrop.addEventListener('click', _closeMenu);
+    }
+
+    document.querySelectorAll('.sitemode-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        applySiteMode(btn.dataset.sitemode);
+        _closeMenu();
+      });
+    });
+
+    // Close menu and re-evaluate mobile class on resize
+    window.addEventListener('resize', function() {
+      _updateMobileClass();
+      if (!root.classList.contains('mobile-ui')) _closeMenu();
     });
 
     // ── TTS (Web Speech API) ──────────────────────────────────────────────────

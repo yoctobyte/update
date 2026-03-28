@@ -13,6 +13,8 @@
     10. Flash messages
     11. Footer
     12. Admin overrides (all scoped to body.admin)
+    13. Mobile menu (hamburger, panel, site-mode)
+    14. Article density modes (compact / condensed / full)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 
@@ -1446,7 +1448,81 @@ body.admin .page-header h1 { margin: 0; }
 }
 
 
-/* ── 13. Article density modes ───────────────────────────────────────────── */
+/* ── 13. Mobile menu ─────────────────────────────────────────────────────── */
+
+/* Hamburger: hidden on desktop, always a fixed size */
+.util-hamburger {
+  display: none;
+  font-size: 1.2rem;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+/* Backdrop: covers page when menu is open */
+.menu-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgba(0, 0, 0, 0.38);
+}
+html.menu-open .menu-backdrop { display: block; }
+
+/* ── Mobile UI active (set via .mobile-ui class by JS) ───────────────────── */
+
+/* Compact closed state */
+html.mobile-ui .util-hamburger { display: inline-flex; }
+html.mobile-ui .util-bar .util-group { display: none; }
+html.mobile-ui .util-bar {
+  height: 36px;
+  padding: 0 0.8rem;
+}
+
+/* Panel open state */
+html.mobile-ui.menu-open .util-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: auto;
+  z-index: 999;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0.4rem 1rem 0.8rem;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+  border-bottom: 2px solid var(--c-accent);
+  overflow-y: auto;
+  max-height: 90vh;
+}
+html.mobile-ui.menu-open .util-bar .util-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 0.45rem 0;
+  border-left: none !important;
+  margin-left: 0 !important;
+  border-top: 1px solid var(--c-util-border);
+}
+html.mobile-ui.menu-open .util-bar .util-group:first-of-type {
+  border-top: none;
+}
+html.mobile-ui.menu-open .util-admin-group   { margin-left: 0 !important; }
+html.mobile-ui.menu-open .util-nav-group     { margin-left: 0 !important; }
+html.mobile-ui.menu-open .util-search-input  { width: 100%; flex: 1; }
+html.mobile-ui.menu-open .util-search-form   { width: 100%; }
+html.mobile-ui.menu-open .util-btn           { height: 28px; min-width: 28px; font-size: 0.88rem; }
+
+/* ── Force desktop: suppress mobile UI even on narrow screens ────────────── */
+[data-site-mode="desktop"] .util-hamburger { display: none !important; }
+[data-site-mode="desktop"] .util-bar {
+  overflow-x: auto;
+  height: 32px;
+  flex-wrap: nowrap;
+}
+
+/* ── 14. Article density modes (compact / condensed / full) ─────────────── */
 
 /* compact + condensed: strip card box down to a separator strip */
 [data-density="compact"]   .article-card:not(.redactional-card),
