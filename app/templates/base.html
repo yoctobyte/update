@@ -24,6 +24,9 @@
   {# ── Utility bar ──────────────────────────────────────────────────────────── #}
   <div class="util-bar" role="toolbar" aria-label="Weergave-instellingen">
 
+    <button class="util-btn util-hamburger" id="util-hamburger"
+            title="Menu" aria-label="Menu" aria-expanded="false">☰</button>
+
     <div class="util-group">
       <button class="util-btn" id="tts-btn"
               title="Lees voor" aria-pressed="false">🔊 Lees voor</button>
@@ -73,6 +76,16 @@
     <div class="util-group util-nav-group">
       <button class="util-btn util-nav-btn" id="nav-prev" title="Vorige pagina" aria-label="Vorige pagina">&#8249;</button>
       <button class="util-btn util-nav-btn" id="nav-next" title="Volgende pagina" aria-label="Volgende pagina">&#8250;</button>
+    </div>
+
+    <div class="util-group util-sitemode-group">
+      <span class="util-label">Site</span>
+      <button class="util-btn sitemode-btn" data-sitemode="mobile"
+              title="Mobiele weergave" aria-pressed="false">▯</button>
+      <button class="util-btn sitemode-btn" data-sitemode="auto"
+              title="Automatisch" aria-pressed="true">⊙</button>
+      <button class="util-btn sitemode-btn" data-sitemode="desktop"
+              title="Desktopweergave" aria-pressed="false">▭</button>
     </div>
 
     <div class="util-group util-admin-group">
@@ -177,6 +190,8 @@
 
     {% block content %}{% endblock %}
   </main>
+
+  <div id="menu-backdrop" class="menu-backdrop"></div>
 
   <footer class="site-footer">
     <p>{{ site_name }} &mdash; lokaal nieuws voor {{ site_town }}</p>
