@@ -28,7 +28,7 @@
 
   function _updateMobileClass(mode) {
     if (!mode) mode = root.getAttribute('data-site-mode') || 'auto';
-    var narrow = window.innerWidth <= 640;
+    var narrow = window.innerWidth < 1000;
     root.classList.toggle('mobile-ui', mode === 'mobile' || (mode === 'auto' && narrow));
   }
 

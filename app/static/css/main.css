@@ -1458,7 +1458,7 @@ html.mobile-ui .site-title-overlay .overlay-title { font-size: 1.85rem; }
 
 /* Hamburger: hidden on desktop, always a fixed size */
 .util-hamburger {
-  display: none;
+  display: inline-flex;
   font-size: 1.2rem;
   height: 28px;
   min-width: 28px;
