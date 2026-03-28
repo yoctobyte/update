@@ -46,6 +46,10 @@ def create_app(town: str = None) -> Flask:
     # CSRF
     app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
 
+    # Disable static file caching in test-render mode
+    if os.environ.get("TEST_RENDER"):
+        app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
     # Extensions
     db.init_app(app)
     migrate.init_app(app, db)
