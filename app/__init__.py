@@ -30,17 +30,7 @@ def create_app(town: str = None) -> Flask:
     app.config["SECRET_KEY"] = secret_key
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    if os.environ.get("TEST_RENDER"):
-        # Read-only SQLite: open at OS level with mode=ro so no writes are
-        # physically possible. WAL mode is handled transparently by SQLite.
-        import sqlite3 as _sqlite3
-        _db_path = str((Path(Config.DATA_ROOT) / active_town / "database.db").resolve())
-        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite+pysqlite://"
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-            "creator": lambda: _sqlite3.connect(f"file:{_db_path}?mode=ro", uri=True, check_same_thread=False)
-        }
-    else:
-        app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
+    app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
     # Password hash is optional at startup (not needed for migrations/CLI);
     # the login route will refuse if it is absent.
     app.config["ADMIN_PASSWORD_HASH"] = os.environ.get("ADMIN_PASSWORD_HASH", "")
@@ -59,6 +49,15 @@ def create_app(town: str = None) -> Flask:
     # Extensions
     db.init_app(app)
     migrate.init_app(app, db)
+
+    if os.environ.get("TEST_RENDER"):
+        # Prevent all writes via PRAGMA — uses normal SQLAlchemy connection
+        # (WAL-compatible, no dialect bypass issues).
+        from sqlalchemy import event as _sa_event
+        with app.app_context():
+            @_sa_event.listens_for(db.engine, "connect")
+            def _set_query_only(dbapi_conn, _):
+                dbapi_conn.execute("PRAGMA query_only = ON")
     csrf.init_app(app)
     limiter.init_app(app)
 
