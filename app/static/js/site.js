@@ -169,11 +169,14 @@
       var STEP = 0.02;
       var size = parseFloat(getComputedStyle(nav).fontSize) / 16;
 
+      var startSize = size;
       while (nav.scrollHeight > maxH && size > MIN) {
         size = Math.round((size - STEP) * 1000) / 1000;
         nav.style.fontSize = size + 'rem';
       }
 
+      // Font was reduced → 3+ lines; tighten row gap further
+      nav.style.rowGap = size < startSize ? '0.08em' : '';
       nav.style.height = '';
     }
 
