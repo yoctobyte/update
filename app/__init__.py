@@ -28,8 +28,19 @@ def create_app(town: str = None) -> Flask:
 
     # Flask config
     app.config["SECRET_KEY"] = secret_key
-    app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    if os.environ.get("TEST_RENDER"):
+        # Read-only SQLite: open at OS level with mode=ro so no writes are
+        # physically possible. WAL mode is handled transparently by SQLite.
+        import sqlite3 as _sqlite3
+        _db_path = str((Path(Config.DATA_ROOT) / active_town / "database.db").resolve())
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite+pysqlite://"
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "creator": lambda: _sqlite3.connect(f"file:{_db_path}?mode=ro", uri=True)
+        }
+    else:
+        app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
     # Password hash is optional at startup (not needed for migrations/CLI);
     # the login route will refuse if it is absent.
     app.config["ADMIN_PASSWORD_HASH"] = os.environ.get("ADMIN_PASSWORD_HASH", "")
@@ -140,6 +151,7 @@ def create_app(town: str = None) -> Flask:
         and not _is_flask_cli  # CLI already excluded above
     )
     if (not app.config.get("TESTING") and not os.environ.get("TESTING")
+            and not os.environ.get("TEST_RENDER")
             and not _is_flask_cli and not _is_reloader_parent):
         import atexit
         from .services.scheduler_jobs import register_jobs
