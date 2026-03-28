@@ -6,8 +6,9 @@
   'use strict';
 
   var root = document.documentElement;
-  var THEMES = ['light', 'dark', 'green', 'hippy'];
-  var SIZES  = ['s', 'm', 'l'];
+  var THEMES    = ['light', 'dark', 'green', 'hippy'];
+  var SIZES     = ['s', 'm', 'l'];
+  var DENSITIES = ['compact', 'condensed', 'full'];
 
   // ── Theme ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,19 @@
     try { localStorage.setItem('theme', theme); } catch(e) {}
     document.querySelectorAll('.theme-btn').forEach(function(btn) {
       var on = btn.dataset.theme === theme;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  // ── Density ──────────────────────────────────────────────────────────────────
+
+  function applyDensity(density) {
+    if (DENSITIES.indexOf(density) === -1) density = 'full';
+    root.setAttribute('data-density', density);
+    try { localStorage.setItem('density', density); } catch(e) {}
+    document.querySelectorAll('.density-btn').forEach(function(btn) {
+      var on = btn.dataset.density === density;
       btn.classList.toggle('active', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
@@ -41,6 +55,8 @@
   try {
     applyTheme(localStorage.getItem('theme') || 'light');
     applyFont(localStorage.getItem('font')   || 'm');
+    var _defDensity = window.innerWidth < 640 ? 'condensed' : 'full';
+    applyDensity(localStorage.getItem('density') || _defDensity);
   } catch(e) {}
 
   // ── Wire up controls after DOM is ready ──────────────────────────────────────
@@ -48,8 +64,9 @@
   document.addEventListener('DOMContentLoaded', function () {
 
     // Re-apply to update button active states now that buttons exist
-    applyTheme(root.getAttribute('data-theme') || 'light');
-    applyFont(root.getAttribute('data-font')   || 'm');
+    applyTheme(root.getAttribute('data-theme')     || 'light');
+    applyFont(root.getAttribute('data-font')       || 'm');
+    applyDensity(root.getAttribute('data-density') || 'full');
 
     document.querySelectorAll('.theme-btn').forEach(function(btn) {
       btn.addEventListener('click', function() { applyTheme(btn.dataset.theme); });
@@ -57,6 +74,16 @@
 
     document.querySelectorAll('.font-btn').forEach(function(btn) {
       btn.addEventListener('click', function() { applyFont(btn.dataset.font); });
+    });
+
+    document.querySelectorAll('.density-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        applyDensity(btn.dataset.density);
+        document.querySelectorAll('.article-card.density-expanded').forEach(function(c) {
+          c.classList.remove('density-expanded');
+        });
+        window.dispatchEvent(new Event('resize'));
+      });
     });
 
     // ── TTS (Web Speech API) ──────────────────────────────────────────────────

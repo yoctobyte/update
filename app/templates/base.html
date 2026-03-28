@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   {# site.js runs synchronously to apply stored theme/font before first paint #}
   <script src="{{ url_for('static', filename='js/site.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/density.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
 </head>
 <body>
@@ -57,6 +58,16 @@
                placeholder="Zoeken…" aria-label="Zoeken" autocomplete="off">
         <button type="submit" class="util-btn" title="Zoeken">🔍</button>
       </form>
+    </div>
+
+    <div class="util-group">
+      <span class="util-label">Weergave</span>
+      <button class="util-btn density-btn" data-density="compact"
+              title="Alleen titels" aria-pressed="false">▤</button>
+      <button class="util-btn density-btn" data-density="condensed"
+              title="Titels en eerste zin" aria-pressed="false">▦</button>
+      <button class="util-btn density-btn" data-density="full"
+              title="Volledige artikelen" aria-pressed="true">▩</button>
     </div>
 
     <div class="util-group util-nav-group">
