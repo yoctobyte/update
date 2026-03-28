@@ -380,7 +380,7 @@ h1, h2, h3, h4 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  align-content: center;
+  align-content: flex-start;
   column-gap: 1.5rem;
   row-gap: 0.28em;
 }
@@ -388,6 +388,7 @@ h1, h2, h3, h4 {
   color: var(--c-hdr-nav);
   font-family: system-ui, sans-serif;
   font-size: 0.9rem;
+  line-height: 1.2em;
   text-decoration: none;
   letter-spacing: 0.03em;
   padding-bottom: 2px;
