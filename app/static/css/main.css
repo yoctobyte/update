@@ -1448,6 +1448,9 @@ body.admin .page-header h1 { margin: 0; }
 }
 
 
+/* Mobile: nudge overlay title down ~2pt */
+html.mobile-ui .site-title-overlay .overlay-title { font-size: 1.85rem; }
+
 /* ── 13. Mobile menu ─────────────────────────────────────────────────────── */
 
 /* Hamburger: hidden on desktop, always a fixed size */
