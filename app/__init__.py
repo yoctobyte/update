@@ -65,6 +65,13 @@ def create_app(town: str = None) -> Flask:
     csrf.init_app(app)
     limiter.init_app(app)
 
+    # Rate limit error — friendly page instead of bare 429
+    from flask_limiter.errors import RateLimitExceeded
+    @app.errorhandler(RateLimitExceeded)
+    def _rate_limited(e):
+        from flask import render_template as _rt
+        return _rt("errors/429.html"), 429
+
     # Security headers
     @app.after_request
     def _security_headers(response):
