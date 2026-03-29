@@ -21,6 +21,7 @@ Disallow: /admin/
 Disallow: /favicon/
 Disallow: /opinie/bewerken/
 Disallow: /over-ons/contact
+Disallow: /verzoek-verwijdering
 
 # Avoid indexing paginated duplicates
 #Disallow: /*?page=
