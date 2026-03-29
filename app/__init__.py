@@ -28,8 +28,9 @@ def create_app(town: str = None) -> Flask:
 
     # Flask config
     app.config["SECRET_KEY"] = secret_key
-    app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = Config.database_uri()
     # Password hash is optional at startup (not needed for migrations/CLI);
     # the login route will refuse if it is absent.
     app.config["ADMIN_PASSWORD_HASH"] = os.environ.get("ADMIN_PASSWORD_HASH", "")
@@ -45,9 +46,22 @@ def create_app(town: str = None) -> Flask:
     # CSRF
     app.config["WTF_CSRF_TIME_LIMIT"] = 3600  # 1 hour
 
+    # Disable static file caching in test-render mode
+    if os.environ.get("TEST_RENDER"):
+        app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
     # Extensions
     db.init_app(app)
     migrate.init_app(app, db)
+
+    if os.environ.get("TEST_RENDER"):
+        # Prevent all writes via PRAGMA — uses normal SQLAlchemy connection
+        # (WAL-compatible, no dialect bypass issues).
+        from sqlalchemy import event as _sa_event
+        with app.app_context():
+            @_sa_event.listens_for(db.engine, "connect")
+            def _set_query_only(dbapi_conn, _):
+                dbapi_conn.execute("PRAGMA query_only = ON")
     csrf.init_app(app)
     limiter.init_app(app)
 
@@ -104,12 +118,16 @@ def create_app(town: str = None) -> Flask:
             return _url_for("main.redactie_event_detail", event_id=event.id, slug=_slugify(event.title or ""))
         return _url_for("main.event_detail", event_id=event.id, slug=_slugify(event.title or ""))
 
+    import time as _time
+    _static_version = str(int(_time.time()))
+
     app.jinja_env.globals.update(
         site_name=_town_cfg.get("site_name", "Lokaal Nieuws"),
         site_town=site_town,
         article_url=_article_url,
         redactie_url=_redactie_url,
         event_url=_event_url,
+        static_version=_static_version,
     )
 
     # Register /<town_slug> as the canonical local news URL.
@@ -140,6 +158,7 @@ def create_app(town: str = None) -> Flask:
         and not _is_flask_cli  # CLI already excluded above
     )
     if (not app.config.get("TESTING") and not os.environ.get("TESTING")
+            and not os.environ.get("TEST_RENDER")
             and not _is_flask_cli and not _is_reloader_parent):
         import atexit
         from .services.scheduler_jobs import register_jobs

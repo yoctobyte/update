@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Artikel niet gevonden{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Artikel niet gevonden</h1>
+  <p class="search-meta">Dit artikel bestaat niet meer of is nog niet verwerkt. Excuses voor het ongemak.</p>
+</div>
+
+{% if results %}
+<p class="search-meta">Misschien zoek je dit:</p>
+<div class="article-list">
+  {% for article, score in results %}
+    <article class="article-card">
+      <h2 class="article-title">
+        <a href="{{ article_url(article) }}">{{ article.title }}</a>
+      </h2>
+
+      {% set desc = article.summary or article.short_text %}
+      {% if desc %}
+        <a href="{{ article_url(article) }}" class="article-snippet-link">
+          <p class="article-snippet">{{ desc }}</p>
+        </a>
+      {% endif %}
+
+      <div class="article-footer">
+        <div class="article-sources">
+          {% for src in sources_by_url.get(article.url, [article.source]) %}
+            <a href="{{ article.url }}" target="_blank" rel="noopener"
+               title="{{ src.name }}" class="source-favicon-link">
+              <img src="{{ url_for('main.source_favicon', source_id=src.id) }}"
+                   class="source-favicon" alt="{{ src.name }}"
+                   width="16" height="16" loading="lazy">
+            </a>
+          {% endfor %}
+          <span class="geo-badge geo-{{ article.geo_scope }}">{{ article.geo_scope }}</span>
+          <time class="article-date">
+            {%- if article.published_at -%}
+              {{ article.published_at.strftime('%-d %b %H:%M') }}
+            {%- elif article.created_at -%}
+              {{ article.created_at.strftime('%-d %b %H:%M') }}
+            {%- endif -%}
+          </time>
+        </div>
+        <a href="{{ article.url }}" target="_blank" rel="noopener"
+           class="ext-indicator" title="Lees op {{ article.source.name }}">↗</a>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+{% else %}
+<p class="search-meta">Er zijn geen vergelijkbare artikelen gevonden voor <em>{{ query }}</em>.</p>
+{% endif %}
+{% endblock %}

@@ -13,6 +13,8 @@
     10. Flash messages
     11. Footer
     12. Admin overrides (all scoped to body.admin)
+    13. Mobile menu (hamburger, panel, site-mode)
+    14. Article density modes (compact / condensed / full)
    ═══════════════════════════════════════════════════════════════════════════ */
 
 
@@ -235,7 +237,7 @@ h1, h2, h3, h4 {
 
 .util-admin { font-size: 0.85rem; }
 .util-nav-btn { font-size: 1.1rem; padding: 0 6px; }
-.util-nav-group { margin-left: auto !important; border-left: none; }
+.util-nav-group { border-left: none; }
 
 .util-search-form {
   display: flex;
@@ -302,7 +304,6 @@ h1, h2, h3, h4 {
 
 .top-section {
   position: relative;
-  overflow: hidden;
 }
 
 .site-title-overlay {
@@ -334,6 +335,28 @@ h1, h2, h3, h4 {
   letter-spacing: 0.02em;
 }
 
+.subtitle-below {
+  display: none;
+}
+
+@media (max-width: 1279px) {
+  .site-title-overlay .overlay-subtitle { visibility: hidden; }
+  .subtitle-below {
+    display: block;
+    position: absolute;
+    top: 100%;
+    right: 1rem;
+    white-space: nowrap;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 0.85rem;
+    color: #000;
+    opacity: 0.7;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
 .site-header {
   display: flex;
   align-items: center;
@@ -341,6 +364,7 @@ h1, h2, h3, h4 {
   gap: 1.5rem;
   padding: 0 2rem;
   height: 62px;
+  overflow: hidden;
   background: linear-gradient(to right, var(--c-hdr-bg), var(--c-bg) 70%);
   border: none;
   transition: background 0.25s;
@@ -375,13 +399,18 @@ h1, h2, h3, h4 {
 
 .site-nav {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.5rem;
+  align-content: flex-start;
+  column-gap: 1.5rem;
+  row-gap: 0.19em;
+  padding-top: 1px;
 }
 .site-nav a {
   color: var(--c-hdr-nav);
   font-family: system-ui, sans-serif;
   font-size: 0.9rem;
+  line-height: 1.2em;
   text-decoration: none;
   letter-spacing: 0.03em;
   padding-bottom: 2px;
@@ -394,11 +423,9 @@ h1, h2, h3, h4 {
   border-bottom-color: var(--c-hdr-text);
 }
 
-/* Collapse nav label on very small screens */
 @media (max-width: 480px) {
-  .site-nav  { gap: 0.8rem; }
-  .site-nav a { font-size: 0.82rem; }
   .site-header { padding: 0 1rem; }
+  .site-nav { column-gap: 0.8rem; }
 }
 
 
@@ -722,6 +749,29 @@ main {
 .topic-more-btn:hover {
   background: var(--c-accent);
   color: #fff;
+}
+
+@media (max-width: 899px) {
+  .site-title-overlay { right: 40px; }
+  .topic-filter {
+    gap: 0.1rem 0.5rem;
+  }
+  .topic-filter a,
+  .topic-more-btn {
+    padding: 0;
+    border-radius: 0;
+    background: none !important;
+    color: var(--c-tag-text) !important;
+    font-size: 0.8rem;
+    border: none;
+    box-shadow: none;
+  }
+  .topic-filter a:hover,
+  .topic-filter a.active {
+    color: var(--c-accent) !important;
+    background: none !important;
+    text-decoration: underline;
+  }
 }
 
 .tag {
@@ -1443,4 +1493,152 @@ body.admin .page-header h1 { margin: 0; }
   font-size: 0.9rem;
   line-height: 1.5;
   resize: vertical;
+}
+
+
+/* Mobile: nudge overlay title down ~2pt */
+html.mobile-ui .site-title-overlay .overlay-title { font-size: 1.85rem; }
+
+/* ── 13. Mobile menu ─────────────────────────────────────────────────────── */
+
+/* Hamburger: hidden on desktop, always a fixed size */
+.util-hamburger {
+  display: inline-flex;
+  font-size: 1.2rem;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+/* Backdrop: covers page when menu is open */
+.menu-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgba(0, 0, 0, 0.38);
+}
+html.menu-open .menu-backdrop { display: block; }
+
+/* ── Mobile UI active (set via .mobile-ui class by JS) ───────────────────── */
+
+/* Compact closed state */
+html.mobile-ui .util-hamburger { display: inline-flex; }
+html.mobile-ui .util-bar .util-group { display: none; }
+html.mobile-ui .util-bar {
+  height: 36px;
+  padding: 0 0.8rem;
+}
+
+/* Panel open state */
+html.mobile-ui.menu-open .util-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: auto;
+  z-index: 999;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0.4rem 1rem 0.8rem;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+  border-bottom: 2px solid var(--c-accent);
+  overflow-y: auto;
+  max-height: 90vh;
+}
+html.mobile-ui.menu-open .util-bar .util-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 0.45rem 0;
+  border-left: none !important;
+  margin-left: 0 !important;
+  border-top: 1px solid var(--c-util-border);
+}
+html.mobile-ui.menu-open .util-bar .util-group:first-of-type {
+  border-top: none;
+}
+html.mobile-ui.menu-open .util-admin-group   { margin-left: 0 !important; }
+html.mobile-ui.menu-open .util-nav-group     { margin-left: 0 !important; }
+html.mobile-ui.menu-open .util-search-input  { width: 100%; flex: 1; }
+html.mobile-ui.menu-open .util-search-form   { width: 100%; }
+html.mobile-ui.menu-open .util-btn           { height: 28px; min-width: 28px; font-size: 0.88rem; }
+
+/* ── Force desktop: suppress mobile UI even on narrow screens ────────────── */
+[data-site-mode="desktop"] .util-hamburger { display: none !important; }
+[data-site-mode="desktop"] .util-bar {
+  overflow-x: auto;
+  height: 32px;
+  flex-wrap: nowrap;
+}
+
+/* ── 14. Article density modes (compact / condensed / full) ─────────────── */
+
+/* compact + condensed: strip card box down to a separator strip */
+[data-density="compact"]   .article-card:not(.redactional-card),
+[data-density="condensed"] .article-card:not(.redactional-card) {
+  background:    transparent;
+  border:        none;
+  border-top:    1px solid var(--c-border);
+  border-radius: 0;
+  padding:       0.45rem 0.15rem;
+  box-shadow:    none;
+  transition:    border-color 0.1s;
+  cursor:        pointer;
+}
+[data-density="compact"]   .article-card:not(.redactional-card):hover,
+[data-density="condensed"] .article-card:not(.redactional-card):hover {
+  box-shadow:        none;
+  border-top-color:  var(--c-accent);
+}
+
+[data-density="compact"]   .article-list,
+[data-density="condensed"] .article-list {
+  gap: 0;
+}
+
+/* compact: title only — hide everything else */
+[data-density="compact"] .article-card:not(.redactional-card) .article-snippet-link,
+[data-density="compact"] .article-card:not(.redactional-card) .article-footer,
+[data-density="compact"] .article-card:not(.redactional-card) .article-topics,
+[data-density="compact"] .article-card:not(.redactional-card) .article-stories {
+  display: none;
+}
+
+/* condensed: first sentence only — hide footer, rest of snippet */
+[data-density="condensed"] .article-card:not(.redactional-card) .article-footer,
+[data-density="condensed"] .article-card:not(.redactional-card) .article-topics,
+[data-density="condensed"] .article-card:not(.redactional-card) .article-stories {
+  display: none;
+}
+[data-density="condensed"] .article-card:not(.redactional-card) .rest-of-snippet {
+  display: none;
+}
+
+/* expanded card: restore full card appearance */
+[data-density="compact"]   .article-card.density-expanded,
+[data-density="condensed"] .article-card.density-expanded {
+  background:    var(--c-surface);
+  border:        1px solid var(--c-accent);
+  border-radius: 6px;
+  padding:       1.1rem 1.2rem 0.85rem;
+  box-shadow:    0 3px 12px rgba(0,0,0,0.10);
+  cursor:        default;
+}
+[data-density="compact"] .article-card.density-expanded .article-snippet-link {
+  display: block;
+}
+[data-density="compact"]   .article-card.density-expanded .article-footer,
+[data-density="condensed"] .article-card.density-expanded .article-footer {
+  display: flex;
+}
+[data-density="compact"]   .article-card.density-expanded .article-topics,
+[data-density="compact"]   .article-card.density-expanded .article-stories,
+[data-density="condensed"] .article-card.density-expanded .article-topics,
+[data-density="condensed"] .article-card.density-expanded .article-stories {
+  display: flex;
+}
+[data-density="condensed"] .article-card.density-expanded .rest-of-snippet {
+  display: inline;
 }

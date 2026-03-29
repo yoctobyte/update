@@ -1,5 +1,7 @@
-User-agent: *
 # Public content — welcome
+
+User-agent: *
+Content-Signal: search=yes,ai-train=no,ai-input=yes
 Allow: /
 Allow: /regio
 Allow: /provincie
@@ -11,6 +13,7 @@ Allow: /over-ons
 Allow: /artikel/
 Allow: /alles
 Allow: /redactie
+Allow: /zoeken
 Allow: /sitemap.xml
 
 # No value for crawlers
@@ -20,4 +23,6 @@ Disallow: /opinie/bewerken/
 Disallow: /over-ons/contact
 
 # Avoid indexing paginated duplicates
-Disallow: /*?page=
+#Disallow: /*?page=
+
+# Kind regards from The Netherlands
