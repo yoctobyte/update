@@ -1,0 +1,21 @@
+{# Shared contact fields for url + source removal request types #}
+<div class="field">
+  <label for="vv-name">Naam <span aria-hidden="true">*</span></label>
+  <input type="text" id="vv-name" name="contact_name" autocomplete="name" required
+         value="{{ form.contact_name if form else '' }}">
+</div>
+<div class="field">
+  <label>Contactgegeven <span aria-hidden="true">*</span>
+    <small>(ten minste één: e-mail of telefoon)</small></label>
+  <div class="vv-contact-row">
+    <input type="email" name="email" autocomplete="email"
+           placeholder="E-mailadres"
+           value="{{ form.email if form else '' }}">
+    <input type="tel" name="phone" autocomplete="tel"
+           placeholder="Telefoonnummer"
+           value="{{ form.phone if form else '' }}">
+    <input type="text" name="phone_app"
+           placeholder="Via (bijv. WhatsApp)"
+           value="{{ form.phone_app if form else '' }}">
+  </div>
+</div>

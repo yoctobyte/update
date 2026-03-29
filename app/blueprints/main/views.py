@@ -813,6 +813,51 @@ def contact_submit():
                            form_sent=True)
 
 
+# ── Verzoek om verwijdering ───────────────────────────────────────────────────
+
+@bp.route("/verzoek-verwijdering", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
+def verzoek_verwijdering():
+    from ...models import RemovalRequest
+    if request.method != "POST":
+        return render_template("main/verzoek_verwijdering.html")
+
+    rtype       = request.form.get("request_type", "").strip()
+    target      = request.form.get("target", "").strip() or None
+    description = request.form.get("description", "").strip()
+    name        = request.form.get("contact_name", "").strip() or None
+    email       = request.form.get("email", "").strip() or None
+    phone       = request.form.get("phone", "").strip() or None
+    phone_app   = request.form.get("phone_app", "").strip() or None
+
+    errors = []
+    if rtype not in ("tip", "url", "source"):
+        errors.append("Kies een type verzoek.")
+    if not description:
+        errors.append("Omschrijving is verplicht.")
+    if rtype in ("url", "source"):
+        if not name:
+            errors.append("Naam is verplicht voor dit type verzoek.")
+        if not email and not phone:
+            errors.append("Vul ten minste een e-mailadres of telefoonnummer in.")
+
+    if errors:
+        return render_template("main/verzoek_verwijdering.html",
+                               errors=errors, form=request.form)
+
+    db.session.add(RemovalRequest(
+        request_type=rtype,
+        target=target,
+        description=description,
+        contact_name=name,
+        email=email,
+        phone=phone,
+        phone_app=phone_app,
+    ))
+    db.session.commit()
+    return render_template("main/verzoek_verwijdering.html", sent=True)
+
+
 # ── Uploaded images ───────────────────────────────────────────────────────────
 
 @bp.route("/uploads/<path:filename>")
@@ -928,7 +973,8 @@ def sitemap_xml():
         ("/redactie",      "weekly",  "0.8"),
         ("/agenda",        "daily",   "0.7"),
         ("/ingezonden",    "weekly",  "0.6"),
-        ("/over-ons",      "monthly", "0.5"),
+        ("/over-ons",               "monthly", "0.5"),
+        ("/verzoek-verwijdering",   "yearly",  "0.3"),
         ("/zoeken",        "weekly",  "0.4"),
     ]
     for path, freq, pri in static_pages:

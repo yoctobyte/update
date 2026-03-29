@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Verzoek om verwijdering{% endblock %}
+{% block content %}
+<article class="prose-page">
+
+  <h1>Verzoek om verwijdering</h1>
+
+  <p class="lead">
+    Heeft u een opmerking over een artikel, een URL of een van onze bronnen?
+    Gebruik dit formulier om ons te informeren. Wij streven ernaar uw verzoek
+    <strong>binnen 60 dagen</strong> te behandelen.
+  </p>
+
+  {% if sent %}
+    <div class="flash flash-success">
+      Uw verzoek is ontvangen. Wij nemen het in behandeling en komen indien nodig bij u terug.
+    </div>
+
+  {% else %}
+
+    {% if errors %}
+      <div class="flash flash-error">
+        {% for e in errors %}<div>{{ e }}</div>{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('main.verzoek_verwijdering') }}" id="verzoek-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      {# ── Type keuze ────────────────────────────────────────────────────────── #}
+      <fieldset class="vv-type-choice">
+        <legend>Wat wilt u melden?</legend>
+
+        <label class="vv-radio">
+          <input type="radio" name="request_type" value="tip"
+                 {% if (form and form.request_type == 'tip') %}checked{% endif %}>
+          <span>Tip voor de redactie — ongeschikt of onjuist artikel</span>
+        </label>
+
+        <label class="vv-radio">
+          <input type="radio" name="request_type" value="url"
+                 {% if (form and form.request_type == 'url') %}checked{% endif %}>
+          <span>Verzoek om verwijdering van een specifieke URL</span>
+        </label>
+
+        <label class="vv-radio">
+          <input type="radio" name="request_type" value="source"
+                 {% if (form and form.request_type == 'source') %}checked{% endif %}>
+          <span>Verzoek om verwijdering van een gecrawlde bron (RSS-feed of website)</span>
+        </label>
+      </fieldset>
+
+      {# ── Sectie: tip ───────────────────────────────────────────────────────── #}
+      <div class="vv-section" id="section-tip">
+        <p class="vv-intro">
+          Wilt u de redactie attenderen op een ongeschikt of onjuist artikel?
+          U kunt anoniem een tip insturen. Vul hieronder het artikel-URL of artikelnummer in
+          en beschrijf wat er niet klopt.
+        </p>
+        <div class="field">
+          <label for="target-tip">Artikel-URL of artikelnummer <small>(optioneel)</small></label>
+          <input type="text" id="target-tip" name="target" placeholder="https://… of #12345"
+                 value="{{ form.target if form else '' }}">
+        </div>
+        <div class="field">
+          <label for="desc-tip">Omschrijving <span aria-hidden="true">*</span></label>
+          <textarea id="desc-tip" name="description" rows="5" required
+                    placeholder="Wat klopt er niet, of waarom is dit artikel ongeschikt?">{{ form.description if form else '' }}</textarea>
+        </div>
+        <div class="field">
+          <label for="name-tip">Naam of contactgegeven <small>(optioneel — anoniem is toegestaan)</small></label>
+          <input type="text" id="name-tip" name="contact_name" autocomplete="name"
+                 value="{{ form.contact_name if form else '' }}">
+        </div>
+      </div>
+
+      {# ── Sectie: url ───────────────────────────────────────────────────────── #}
+      <div class="vv-section" id="section-url">
+        <p class="vv-intro">
+          Verzoekt u om verwijdering van een specifieke URL uit onze index?
+          Wij hebben uw contactgegevens nodig voor verificatie en kunnen
+          <strong>aanvullende verificatie vragen omtrent uw eigenaarschap</strong> van de betreffende URL.
+          Anonieme verzoeken worden niet in behandeling genomen.
+        </p>
+        <div class="field">
+          <label for="target-url">URL <span aria-hidden="true">*</span></label>
+          <input type="url" id="target-url" name="target" placeholder="https://…"
+                 value="{{ form.target if form else '' }}">
+        </div>
+        <div class="field">
+          <label for="desc-url">Motivatie <span aria-hidden="true">*</span></label>
+          <textarea id="desc-url" name="description" rows="5" required
+                    placeholder="Waarom dient deze URL verwijderd te worden?">{{ form.description if form else '' }}</textarea>
+        </div>
+        {% include "main/_verzoek_contact_fields.html" %}
+      </div>
+
+      {# ── Sectie: source ────────────────────────────────────────────────────── #}
+      <div class="vv-section" id="section-source">
+        <p class="vv-intro">
+          Verzoekt u om verwijdering van een volledig gecrawlde bron?
+        </p>
+        <p class="vv-intro vv-notice">
+          Wij willen u erop wijzen dat de door ons geïndexeerde bronnen
+          <strong>openbaar gepubliceerde informatie</strong> betreffen. Door een RSS-feed of website
+          openbaar te publiceren, heeft u er bewust voor gekozen deze beschikbaar te stellen.
+          Wij functioneren in wezen als een geavanceerde RSS-lezer — niet anders dan Google News
+          of een willekeurige feedreader.
+        </p>
+        <p class="vv-intro vv-notice">
+          Wij verzoeken u dan ook een <strong>gedegen motivatie</strong> aan te leveren.
+          Een verzoek dat uitsluitend gebaseerd is op het feit dat uw bron wordt geïndexeerd,
+          zal niet worden gehonoreerd. De eenvoudigste oplossing is het niet langer openbaar
+          publiceren van uw feed of het toevoegen van een
+          <code>X-Robots-Tag: noindex</code> header.
+          Uiteraard staan wij open voor legitieme verzoeken.
+        </p>
+        <div class="field">
+          <label for="target-source">URL van bron of RSS-feed <span aria-hidden="true">*</span></label>
+          <input type="url" id="target-source" name="target" placeholder="https://…"
+                 value="{{ form.target if form else '' }}">
+        </div>
+        <div class="field">
+          <label for="desc-source">Motivatie <span aria-hidden="true">*</span></label>
+          <textarea id="desc-source" name="description" rows="6" required
+                    placeholder="Waarom dient deze bron niet geïndexeerd te worden? Onderbouw uw verzoek.">{{ form.description if form else '' }}</textarea>
+        </div>
+        {% include "main/_verzoek_contact_fields.html" %}
+      </div>
+
+      <div id="vv-submit" style="display:none">
+        <button type="submit" class="btn">Verzoek indienen</button>
+      </div>
+    </form>
+
+    <script>
+    (function() {
+      var radios   = document.querySelectorAll('input[name="request_type"]');
+      var sections = document.querySelectorAll('.vv-section');
+      var submit   = document.getElementById('vv-submit');
+
+      function update() {
+        var val = '';
+        radios.forEach(function(r) { if (r.checked) val = r.value; });
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        if (val) {
+          var s = document.getElementById('section-' + val);
+          if (s) s.style.display = '';
+          submit.style.display = '';
+        } else {
+          submit.style.display = 'none';
+        }
+      }
+
+      radios.forEach(function(r) { r.addEventListener('change', update); });
+      update();
+    })();
+    </script>
+
+  {% endif %}
+
+</article>
+{% endblock %}
