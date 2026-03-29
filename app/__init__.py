@@ -118,12 +118,16 @@ def create_app(town: str = None) -> Flask:
             return _url_for("main.redactie_event_detail", event_id=event.id, slug=_slugify(event.title or ""))
         return _url_for("main.event_detail", event_id=event.id, slug=_slugify(event.title or ""))
 
+    import time as _time
+    _static_version = str(int(_time.time()))
+
     app.jinja_env.globals.update(
         site_name=_town_cfg.get("site_name", "Lokaal Nieuws"),
         site_town=site_town,
         article_url=_article_url,
         redactie_url=_redactie_url,
         event_url=_event_url,
+        static_version=_static_version,
     )
 
     # Register /<town_slug> as the canonical local news URL.

@@ -147,9 +147,9 @@
       });
     });
 
-    // Close menu and re-evaluate mobile class on resize
+    // Close menu and re-evaluate mobile class on resize; revert to auto on any resize
     window.addEventListener('resize', function() {
-      _updateMobileClass();
+      applySiteMode('auto');
       if (!root.classList.contains('mobile-ui')) _closeMenu();
     });
 
