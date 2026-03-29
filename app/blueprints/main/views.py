@@ -774,6 +774,12 @@ def zoeken():
 
 # ── About / Over ons ──────────────────────────────────────────────────────────
 
+@bp.route("/privacy")
+def privacy():
+    cfg = _town_cfg()
+    return render_template("main/privacy.html", contact=cfg.get("contact", {}))
+
+
 @bp.route("/over-ons")
 def about():
     cfg = _town_cfg()
@@ -975,6 +981,7 @@ def sitemap_xml():
         ("/ingezonden",    "weekly",  "0.6"),
         ("/over-ons",               "monthly", "0.5"),
         ("/verzoek-verwijdering",   "yearly",  "0.3"),
+        ("/privacy",                "yearly",  "0.2"),
         ("/zoeken",        "weekly",  "0.4"),
     ]
     for path, freq, pri in static_pages:

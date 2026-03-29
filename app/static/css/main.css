@@ -1204,6 +1204,15 @@ a.ext-indicator:hover { opacity: 1; color: var(--c-accent); }
   border-top: 1px solid var(--c-border);
   background: var(--c-surface-alt);
 }
+.footer-links { margin-top: 0.3rem; }
+.footer-links a { color: var(--c-text-muted); text-decoration: none; }
+.footer-links a:hover { text-decoration: underline; }
+
+.privacy-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; }
+.privacy-table th { text-align: left; padding: 0.4rem 0.7rem; background: var(--c-surface-alt);
+                    border-bottom: 2px solid var(--c-border); }
+.privacy-table td { padding: 0.4rem 0.7rem; border-bottom: 1px solid var(--c-border);
+                    vertical-align: top; }
 
 
 /* ══════════════════════════════════════════════════════════════════════════

@@ -27,6 +27,40 @@ def _wrap(job_id, func):
     return wrapper
 
 
+def _purge_old_records(app) -> None:
+    """Delete personal data past its retention period (AVG compliance)."""
+    from datetime import timezone, timedelta
+    from ..extensions import db
+    from ..models import ContactMessage, RemovalRequest
+    from ..models.opinion import Opinion
+
+    now = datetime.now(timezone.utc)
+
+    with app.app_context():
+        # Contact messages: 1 year
+        cutoff_contact = now - timedelta(days=365)
+        n = ContactMessage.query.filter(ContactMessage.created_at < cutoff_contact).delete()
+        if n:
+            logger.info("PURGE: deleted %d contact message(s) older than 1 year", n)
+
+        # Unpublished/rejected opinions: 90 days
+        cutoff_opinion = now - timedelta(days=90)
+        n = Opinion.query.filter(
+            Opinion.status.in_(["pending", "rejected"]),
+            Opinion.created_at < cutoff_opinion,
+        ).delete(synchronize_session=False)
+        if n:
+            logger.info("PURGE: deleted %d unpublished opinion(s) older than 90 days", n)
+
+        # Removal requests: 2 years
+        cutoff_removal = now - timedelta(days=730)
+        n = RemovalRequest.query.filter(RemovalRequest.created_at < cutoff_removal).delete()
+        if n:
+            logger.info("PURGE: deleted %d removal request(s) older than 2 years", n)
+
+        db.session.commit()
+
+
 def _check_templates(app) -> None:
     """Stat template files every 30s. Clear Jinja2 cache only if a file changed."""
     templates_dir = Path(app.root_path) / "templates"
@@ -183,6 +217,16 @@ def register_jobs(scheduler, app) -> None:
         trigger="interval",
         minutes=30,
         next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="purge_old_records",
+        func=_wrap("purge_old_records", _purge_old_records),
+        args=[app],
+        trigger="interval",
+        hours=24,
+        next_run_time=None,   # don't run on startup, let things settle
         misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,
     )
