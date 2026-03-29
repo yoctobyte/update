@@ -31,21 +31,22 @@
       <fieldset class="vv-type-choice">
         <legend>Wat wilt u melden?</legend>
 
+        {%- set _type = (form.request_type if form else prefill.request_type) if (form or prefill) else '' -%}
         <label class="vv-radio">
           <input type="radio" name="request_type" value="tip"
-                 {% if (form and form.request_type == 'tip') %}checked{% endif %}>
+                 {% if _type == 'tip' %}checked{% endif %}>
           <span>Tip voor de redactie — ongeschikt of onjuist artikel</span>
         </label>
 
         <label class="vv-radio">
           <input type="radio" name="request_type" value="url"
-                 {% if (form and form.request_type == 'url') %}checked{% endif %}>
+                 {% if _type == 'url' %}checked{% endif %}>
           <span>Verzoek om verwijdering van een specifieke URL</span>
         </label>
 
         <label class="vv-radio">
           <input type="radio" name="request_type" value="source"
-                 {% if (form and form.request_type == 'source') %}checked{% endif %}>
+                 {% if _type == 'source' %}checked{% endif %}>
           <span>Verzoek om verwijdering van een gecrawlde bron (RSS-feed of website)</span>
         </label>
       </fieldset>
@@ -57,10 +58,11 @@
           U kunt anoniem een tip insturen. Vul hieronder het artikel-URL of artikelnummer in
           en beschrijf wat er niet klopt.
         </p>
+        {%- set _target = (form.target if form else (prefill.target if prefill else '')) -%}
         <div class="field">
           <label for="target-tip">Artikel-URL of artikelnummer <small>(optioneel)</small></label>
           <input type="text" id="target-tip" name="target" placeholder="https://… of #12345"
-                 value="{{ form.target if form else '' }}">
+                 value="{{ _target }}">
         </div>
         <div class="field">
           <label for="desc-tip">Omschrijving <span aria-hidden="true">*</span></label>

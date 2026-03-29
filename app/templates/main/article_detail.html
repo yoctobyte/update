@@ -130,5 +130,13 @@
     </section>
   {% endif %}
 
+  {# AI disclosure + tip link #}
+  <footer class="article-ai-footer">
+    <span class="article-ai-label">🤖 Automatisch gegenereerde samenvatting</span>
+    <span class="article-ai-sep">·</span>
+    <a href="{{ url_for('main.verzoek_verwijdering', type='tip', target='#' ~ article.id) }}"
+       class="article-ai-tip">Onjuist of ongeschikt? Tip de redactie</a>
+  </footer>
+
 </div>
 {% endblock %}

@@ -28,7 +28,32 @@ def _wrap(job_id, func):
 
 
 def _purge_old_records(app) -> None:
-    """Delete personal data past its retention period (AVG compliance)."""
+    """Purge personal data past its AVG/GDPR retention period.
+
+    Retention periods are documented in /privacy (privacyverklaring) and must
+    stay in sync with that page if changed here.
+
+    ┌─────────────────────────┬──────────────┬──────────────────────────────────────┐
+    │ Record type             │ Retention    │ Rationale                            │
+    ├─────────────────────────┼──────────────┼──────────────────────────────────────┤
+    │ ContactMessage          │ 1 year       │ Sufficient to handle follow-up;      │
+    │                         │              │ no legal obligation to keep longer.  │
+    ├─────────────────────────┼──────────────┼──────────────────────────────────────┤
+    │ Opinion (unpublished /  │ 90 days      │ Short window for editorial review;   │
+    │ rejected)               │              │ published opinions are not purged    │
+    │                         │              │ here — they are editorial content.   │
+    ├─────────────────────────┼──────────────┼──────────────────────────────────────┤
+    │ RemovalRequest          │ 2 years      │ Kept longer than others to document  │
+    │                         │              │ decisions made (AVG Art. 17(3)       │
+    │                         │              │ accountability / legal defence).     │
+    └─────────────────────────┴──────────────┴──────────────────────────────────────┘
+
+    Server logs (nginx/gunicorn) are NOT managed here — configure log rotation
+    at OS level (logrotate), target 90 days per the privacyverklaring.
+
+    This job runs once per day and is intentionally NOT triggered at startup
+    so it does not slow down restarts or interfere with migrations.
+    """
     from datetime import timezone, timedelta
     from ..extensions import db
     from ..models import ContactMessage, RemovalRequest
@@ -37,13 +62,14 @@ def _purge_old_records(app) -> None:
     now = datetime.now(timezone.utc)
 
     with app.app_context():
-        # Contact messages: 1 year
+        # Contact messages — 1 year
         cutoff_contact = now - timedelta(days=365)
         n = ContactMessage.query.filter(ContactMessage.created_at < cutoff_contact).delete()
         if n:
             logger.info("PURGE: deleted %d contact message(s) older than 1 year", n)
 
-        # Unpublished/rejected opinions: 90 days
+        # Unpublished / rejected opinions — 90 days
+        # Published opinions are editorial content and excluded from this purge.
         cutoff_opinion = now - timedelta(days=90)
         n = Opinion.query.filter(
             Opinion.status.in_(["pending", "rejected"]),
@@ -52,7 +78,7 @@ def _purge_old_records(app) -> None:
         if n:
             logger.info("PURGE: deleted %d unpublished opinion(s) older than 90 days", n)
 
-        # Removal requests: 2 years
+        # Removal requests — 2 years (accountability retention, AVG Art. 17(3))
         cutoff_removal = now - timedelta(days=730)
         n = RemovalRequest.query.filter(RemovalRequest.created_at < cutoff_removal).delete()
         if n:

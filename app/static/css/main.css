@@ -901,6 +901,21 @@ a.tag:hover { background: var(--c-accent); color: #fff; text-decoration: none; }
   margin-bottom: 0.75rem;
 }
 
+.article-ai-footer {
+  margin-top: 2.5rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--c-border);
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  align-items: center;
+}
+.article-ai-sep  { opacity: 0.4; }
+.article-ai-tip  { color: var(--c-text-muted); text-decoration: underline; }
+.article-ai-tip:hover { color: var(--c-accent); }
+
 .article-full-text {
   margin: 1.5rem 0;
   border: 1px solid var(--c-border);

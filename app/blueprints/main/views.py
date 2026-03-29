@@ -826,7 +826,11 @@ def contact_submit():
 def verzoek_verwijdering():
     from ...models import RemovalRequest
     if request.method != "POST":
-        return render_template("main/verzoek_verwijdering.html")
+        prefill = {
+            "request_type": request.args.get("type", ""),
+            "target":        request.args.get("target", ""),
+        }
+        return render_template("main/verzoek_verwijdering.html", prefill=prefill)
 
     rtype       = request.form.get("request_type", "").strip()
     target      = request.form.get("target", "").strip() or None
