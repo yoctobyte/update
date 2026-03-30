@@ -105,6 +105,7 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
 
 Recent commit:
 - `3835dcb` — `Add story cards to overviews and harden public edit flow`
+- `15efc4c` — `Add human and agent project handover docs`
 
 ## Handover
 
@@ -123,7 +124,6 @@ If another agent picks this up next:
 - Keep documentation current as you go; do not leave reasoning only in chat history.
 
 Current known dirty state after the last recorded commit:
-- untracked: `docs/todo_next_frontpage_today_weekly_2026-03-30.md`
 - untracked: `.wageningen-test.pid`
 - untracked local content/tooling areas also present:
   - `dossiers/`
@@ -175,6 +175,7 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
 - Tested onboarding from scratch using `PROJECT_META.md`, `NOTES.md`, the security note, and the themed-view concept note.
 - Confirmed that a new agent can recover the main branch/runtime constraints and current product direction from docs alone.
 - Tightened handover quality by recording the currently known dirty/untracked state here.
+- Added explicit human-vs-agent documentation split and committed it as `15efc4c`.
 
 ### Todo
 - Keep this file current after each substantial coding session or commit.
@@ -186,9 +187,8 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
 
 ### Git
 - branch: `dev`
-- commit: `3835dcb`
+- commit: `15efc4c`
 - dirty files left:
-  - `docs/todo_next_frontpage_today_weekly_2026-03-30.md`
   - `.wageningen-test.pid`
   - `dossiers/`
   - `histsearch/`
