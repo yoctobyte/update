@@ -171,6 +171,8 @@
          {% if request.endpoint == 'main.internationaal' %}class="active"{% endif %}>Internationaal</a>
       <a href="{{ url_for('main.redactie') }}"
          {% if request.endpoint and 'redactie' in request.endpoint %}class="active"{% endif %}>Redactie</a>
+      <a href="{{ url_for('dossiers.index') }}"
+         {% if request.endpoint and request.endpoint.startswith('dossiers.') %}class="active"{% endif %}>Dossiers</a>
       <a href="{{ url_for('main.events') }}"
          {% if request.endpoint and 'event' in request.endpoint %}class="active"{% endif %}>Agenda</a>
       <a href="{{ url_for('main.ingezonden_list') }}"

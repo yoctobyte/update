@@ -290,7 +290,7 @@ def article_detail_redirect(article_id):
 
 @bp.route("/nieuws/<int:article_id>/<slug>")
 def article_detail(article_id, slug):
-    article = Article.query.filter_by(id=article_id).filter(Article.summary.isnot(None)).first()
+    article = Article.query.filter_by(id=article_id).first()
     if article is None:
         from ...services.clustering import search_by_text
         query = slug.replace("-", " ")
@@ -302,6 +302,18 @@ def article_detail(article_id, slug):
             results=results,
             sources_by_url=sources_by_url,
         ), 404
+    if article.summary is None:
+        from ...services.clustering import search_by_text
+        query = (article.title or slug.replace("-", " "))
+        results = search_by_text(query, limit=25)
+        sources_by_url = _sources_by_url([a for a, _ in results])
+        return render_template(
+            "main/article_202.html",
+            article=article,
+            query=query,
+            results=results,
+            sources_by_url=sources_by_url,
+        ), 202
 
     # Other fetched copies of the same URL (from different sources)
     same_url_others = Article.query.filter(

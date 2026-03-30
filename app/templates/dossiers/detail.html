@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ dossier.title }}{% endblock %}
+{% block content %}
+<article class="prose-page dossier-detail">
+
+  <nav class="breadcrumb">
+    <a href="{{ url_for('dossiers.index') }}">← Dossiers</a>
+  </nav>
+
+  <h1>{{ dossier.title }}</h1>
+
+  {% if dossier.description %}
+    <p class="lead">{{ dossier.description }}</p>
+  {% endif %}
+
+  {% if dossier.published_date %}
+    <p class="meta-muted" style="margin-bottom: 1.5rem;">Gepubliceerd: {{ dossier.published_date }}</p>
+  {% endif %}
+
+  <div class="dossier-content">
+    {{ content }}
+  </div>
+
+</article>
+{% endblock %}

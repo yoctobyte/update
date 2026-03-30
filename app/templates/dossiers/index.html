@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Dossiers{% endblock %}
+{% block content %}
+<article class="prose-page">
+
+  <h1>Dossiers</h1>
+  <p class="lead">Achtergrond en verdieping over onderwerpen die Wageningen raken.</p>
+
+  {% if dossiers %}
+    <ul class="dossier-list">
+      {% for d in dossiers %}
+        <li class="dossier-item">
+          <a href="{{ url_for('dossiers.detail', dossier_id=d.id) }}" class="dossier-title">{{ d.title }}</a>
+          {% if d.description %}
+            <p class="dossier-desc">{{ d.description }}</p>
+          {% endif %}
+          {% if d.published_date %}
+            <span class="meta-muted dossier-date">{{ d.published_date }}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Er zijn nog geen dossiers gepubliceerd.</p>
+  {% endif %}
+
+</article>
+{% endblock %}

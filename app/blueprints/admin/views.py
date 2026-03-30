@@ -1505,3 +1505,14 @@ def _create_initial_rules(source: Source) -> None:
             source_id=source.id, rule_type="css_selector", rule_definition="",
             approved=False, scope="persistent", rule_purpose=purpose,
         ))
+
+
+# ── Dossiers ──────────────────────────────────────────────────────────────────
+
+@bp.route("/dossiers/refresh", methods=["POST"])
+@login_required
+def dossiers_refresh():
+    from ...blueprints.dossiers.views import refresh_all_dossiers
+    count = refresh_all_dossiers()
+    flash(f"{count} dossier(s) vernieuwd.", "success")
+    return redirect(url_for("admin.dashboard"))

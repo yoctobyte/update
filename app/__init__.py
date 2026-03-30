@@ -90,9 +90,11 @@ def create_app(town: str = None) -> Flask:
     # Blueprints
     from .blueprints.main import bp as main_bp
     from .blueprints.admin import bp as admin_bp
+    from .blueprints.dossiers import bp as dossiers_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(dossiers_bp)
     csrf.exempt(main_bp)
 
     # Markdown filter
