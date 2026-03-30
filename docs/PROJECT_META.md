@@ -180,7 +180,7 @@ Timestamp: YYYY-MM-DD HH:MM TZ
 
 ## Update
 
-Timestamp: 2026-03-30 00:30 Europe/Amsterdam
+Timestamp: 2026-03-30 00:45 Europe/Amsterdam
 
 ### Done
 - Tested onboarding from scratch using `PROJECT_META.md`, `NOTES.md`, the security note, and the themed-view concept note.
@@ -189,15 +189,16 @@ Timestamp: 2026-03-30 00:30 Europe/Amsterdam
 - Added explicit human-vs-agent documentation split and committed it as `15efc4c`.
 - Added a structured cross-agent state file plus `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` compatibility entrypoints.
 - Committed the multi-agent documentation checkpoint as `75b941c`.
-- Started the first implementation slice for stable lane routing:
-  - add a public `Uitgelicht` route
-  - make `/` configurable between `Uitgelicht` and lokaal nieuws
+- Completed the first implementation slice for stable lane routing in `5cc2302`:
+  - added a public `Uitgelicht` route
+  - made `/` configurable between `Uitgelicht` and lokaal nieuws
+  - aligned admin controls and nav labels with the new route shape
 
 ### Todo
 - Keep this file current after each substantial coding session or commit.
 - When the themed-view work advances, move the most current implementation decision back into this file, not only into the concept note.
 - Keep `PROJECT_STATE.yaml` as the canonical source for progress/goals/bugs/todos.
-- Finish and verify the first `Uitgelicht`/homepage-mapping code slice before moving on to `Vandaag`/`Week`.
+- Next implementation target: schema and ranking groundwork for `Vandaag` / `Week`.
 
 ### Handover
 - If you start fresh, read `AGENTS.md`, then `PROJECT_STATE.yaml`, then this file, then `NOTES.md`.
@@ -205,7 +206,7 @@ Timestamp: 2026-03-30 00:30 Europe/Amsterdam
 
 ### Git
 - branch: `dev`
-- commit: `75b941c`
+- commit: `5cc2302`
 - dirty files left:
   - `.wageningen-test.pid`
   - `dossiers/`

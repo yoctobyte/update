@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: "2026-03-30 00:30 Europe/Amsterdam"
+last_updated: "2026-03-30 00:45 Europe/Amsterdam"
 project:
   name: "lokaalnieuws"
   branch: "dev"
@@ -21,7 +21,7 @@ progress:
     - "Frontpage persistence now collapses to one representative article per public story."
     - "Public bearer-token opinion edit flow has rate limiting."
     - "Security review and themed-view concept docs were added on 2026-03-30."
-    - "The first lane implementation slice is underway: Uitgelicht now has a stable public route and homepage mapping is being made configurable."
+    - "A first lane implementation slice is complete: Uitgelicht now has a stable public route and homepage mapping is configurable."
   recently_completed:
     - id: "done-story-cards"
       status: "done"
@@ -43,6 +43,10 @@ progress:
       status: "done"
       date: "2026-03-30"
       item: "Added AGENTS.md plus Claude/Gemini compatibility shims and a structured PROJECT_STATE file."
+    - id: "done-uitgelicht-route"
+      status: "done"
+      date: "2026-03-30"
+      item: "Added a stable public Uitgelicht route and an admin-controlled '/' mapping between Uitgelicht and lokaal nieuws."
 
 goals:
   current_primary:
@@ -86,7 +90,7 @@ todos:
       item: "Add shared agent entrypoints and structured project state so OpenAI, Claude, and Gemini workflows converge on the same in-repo truth."
     - id: "todo-uitgelicht-route"
       priority: "now"
-      status: "in_progress"
+      status: "done"
       item: "Introduce a stable public Uitgelicht route and let admin choose whether '/' maps to Uitgelicht or lokaal nieuws."
     - id: "todo-lane-schema"
       priority: "next"
