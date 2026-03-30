@@ -333,6 +333,45 @@ Geef alleen de samenvatting, geen inleiding of uitleg.
     )
 
 
+def describe_story(summaries: list[str]) -> tuple[str, str] | None:
+    """Generate a short title and synthesized description for a story from 2+ article summaries.
+
+    Returns (title, description) or None on failure.
+    Title: max 10 words, neutral Dutch headline.
+    Description: max 150 words, neutral Dutch paragraph synthesizing all sources.
+    Duplicate information across sources is merged, not repeated.
+    """
+    combined = "\n\n---\n\n".join(summaries[:8])
+    prompt = f"""Hieronder staan {len(summaries)} nieuwssamenvattingen over hetzelfde onderwerp, afkomstig van verschillende bronnen.
+
+Geef je antwoord ALLEEN als JSON met twee sleutels:
+- "title": een neutrale Nederlandstalige kop van maximaal 10 woorden
+- "description": een synthetische samenvatting van maximaal 150 woorden in neutraal Nederlands — verwerk de informatie uit alle bronnen, herhaal geen identieke feiten
+
+Geen inleiding, geen uitleg — alleen de JSON.
+
+Samenvattingen:
+{combined[:5000]}"""
+
+    result = _call(
+        [{"role": "user", "content": prompt}],
+        model=Config.OPENAI_MODEL_DEFAULT,
+        max_tokens=350,
+    )
+    if not result:
+        return None
+    try:
+        data = json.loads(_strip_fences(result))
+        title = (data.get("title") or "").strip()
+        description = (data.get("description") or "").strip()
+        if not title or not description:
+            return None
+        return title, description
+    except (json.JSONDecodeError, TypeError):
+        logger.warning("describe_story returned invalid JSON: %s", result)
+        return None
+
+
 def suggest_topics(title: str, summary: str, existing_topics: list[str]) -> list[str]:
     """
     Select ALL applicable topic names from existing_topics for a given article.

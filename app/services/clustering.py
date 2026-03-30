@@ -109,6 +109,11 @@ def _auto_merge(article: Article, story: Story, score: float) -> None:
     db.session.commit()
     logger.info("Auto-merged article %d into story %d (score %.3f)", article.id, story.id, score)
 
+    # Generate/refresh story description when story reaches 2+ summarized articles
+    summarized = [a for a in story.articles if a.summary]
+    if len(summarized) >= 2:
+        generate_story_description(story)
+
 
 def _suggest_merge(article: Article, story: Story, score: float) -> None:
     # Only create one pending suggestion per article-story pair
@@ -128,6 +133,42 @@ def _suggest_merge(article: Article, story: Story, score: float) -> None:
     db.session.add(log)
     db.session.commit()
     logger.info("Suggested merge: article %d → story %d (score %.3f)", article.id, story.id, score)
+
+
+def generate_story_description(story: Story) -> bool:
+    """Generate/refresh Story.title and Story.description from member article summaries.
+
+    Deduplicates articles by URL so the same story covered by 3 sources only
+    contributes one text block. Requires at least 2 unique-URL summaries.
+    Promotes story.status to 'active' on success.
+    Returns True if description was written.
+    """
+    from .llm import describe_story
+
+    seen_urls: set = set()
+    summaries: list[str] = []
+    for article in sorted(story.articles, key=lambda a: a.published_at or a.created_at or datetime.min):
+        if not article.summary:
+            continue
+        if article.url in seen_urls:
+            continue
+        seen_urls.add(article.url)
+        summaries.append(f"{article.title}\n\n{article.summary}")
+
+    if len(summaries) < 2:
+        return False
+
+    result = describe_story(summaries)
+    if not result:
+        return False
+
+    title, description = result
+    story.title = title
+    story.description = description
+    story.status = "active"
+    db.session.commit()
+    logger.info("Story %d description generated (%d unique sources)", story.id, len(summaries))
+    return True
 
 
 def _create_new_story(article: Article) -> None:

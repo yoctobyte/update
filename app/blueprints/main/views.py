@@ -49,6 +49,64 @@ _PIN_SECTION = {
 }
 
 
+def _mix_stories(articles) -> list:
+    """Replace articles that belong to an active story (with description) with a story card.
+
+    The first article encountered from each active story is replaced by the story
+    object (marked with is_story_card=True). Subsequent articles from the same
+    story are suppressed — they are already represented by the card.
+    Articles not in any active story pass through unchanged.
+    RedactionalPost items (is_redactional_post=True) are never touched.
+    """
+    from ...models.associations import article_stories as _at
+
+    plain = [a for a in articles if not getattr(a, 'is_redactional_post', False)]
+    if not plain:
+        return list(articles)
+
+    article_ids = [a.id for a in plain]
+    memberships = db.session.execute(
+        _at.select().where(_at.c.article_id.in_(article_ids))
+    ).fetchall()
+    if not memberships:
+        return list(articles)
+
+    story_ids = list({row.story_id for row in memberships})
+    article_to_story = {row.article_id: row.story_id for row in memberships}
+
+    active_stories = {
+        s.id: s for s in Story.query.filter(
+            Story.id.in_(story_ids),
+            Story.description.isnot(None),
+            Story.status == "active",
+        ).all()
+    }
+    if not active_stories:
+        return list(articles)
+
+    # Pre-compute display date and sources for each story card
+    for story in active_stories.values():
+        dates = [a.published_at or a.created_at for a in story.articles if a.published_at or a.created_at]
+        story._display_date = max(dates) if dates else story.created_at
+        story.is_story_card = True
+
+    result = []
+    seen_story_ids: set = set()
+    for item in articles:
+        if getattr(item, 'is_redactional_post', False):
+            result.append(item)
+            continue
+        story_id = article_to_story.get(item.id)
+        if story_id and story_id in active_stories:
+            if story_id not in seen_story_ids:
+                result.append(active_stories[story_id])
+                seen_story_ids.add(story_id)
+            # else: suppress — story card already emitted
+        else:
+            result.append(item)
+    return result
+
+
 def _inject_pins(articles, section: str, page: int) -> list:
     """Insert active pinned RedactionalPosts into article list (page 1 only).
 
@@ -242,7 +300,7 @@ def _lokaal_response():
         active_topic=active_topic,
         section_endpoint="main.lokaal",
         sources_by_url=_sources_by_url(pagination.items),
-        page_items=_inject_pins(pagination.items, "local", page),
+        page_items=_inject_pins(_mix_stories(pagination.items), "local", page),
     )
 
 
@@ -274,7 +332,7 @@ def index():
             articles=articles,
             topics=topics,
             sources_by_url=_sources_by_url(articles),
-            page_items=_inject_pins(articles, "frontpage", 1),
+            page_items=_inject_pins(_mix_stories(articles), "frontpage", 1),
         )
     return _lokaal_response()
 
@@ -335,12 +393,31 @@ def article_detail(article_id, slug):
     from ...models import StoryMergeLog
     merge_logs = article.merge_logs.order_by(StoryMergeLog.created_at.desc()).all()
 
-    # Vector similarity: 10 most related articles
+    # Vector similarity: 20 most related articles (wider pool for story discovery)
     # Exclude story siblings (already in "Gerelateerde verhalen") and same-URL copies
     from ...services.clustering import find_similar_articles
     sibling_ids = {a.id for articles in related_per_story.values() for a in articles}
     sibling_ids |= {a.id for a in same_url_others}
-    similar_articles = find_similar_articles(article, limit=10, exclude_ids=sibling_ids)
+    similar_articles_raw = find_similar_articles(article, limit=20, exclude_ids=sibling_ids)
+
+    # Related stories found via similar articles (not stories this article already belongs to)
+    seen_story_ids = {s.id for s in article.stories}
+    similar_stories = []
+    similar_story_article_ids = set()
+    for sim_article, _ in similar_articles_raw:
+        for s in sim_article.stories:
+            if s.status == "active" and s.id not in seen_story_ids:
+                seen_story_ids.add(s.id)
+                story_arts = [a for a in s.articles if a.summary]
+                if story_arts:
+                    similar_stories.append((s, story_arts))
+                    similar_story_article_ids.update(a.id for a in story_arts)
+
+    # Only show similar articles not already surfaced via a related story
+    similar_articles = [
+        (a, score) for a, score in similar_articles_raw
+        if a.id not in similar_story_article_ids
+    ][:8]
 
     return render_template(
         "main/article_detail.html",
@@ -349,6 +426,7 @@ def article_detail(article_id, slug):
         related_per_story=related_per_story,
         merge_logs=merge_logs,
         similar_articles=similar_articles,
+        similar_stories=similar_stories,
     )
 
 
@@ -388,7 +466,7 @@ def regio():
         section_endpoint="main.regio",
         region_towns=region_towns,
         sources_by_url=_sources_by_url(pagination.items),
-        page_items=_inject_pins(pagination.items, "region", page),
+        page_items=_inject_pins(_mix_stories(pagination.items), "region", page),
     )
 
 
@@ -423,7 +501,7 @@ def provincie():
         active_topic=active_topic,
         section_endpoint="main.provincie",
         sources_by_url=_sources_by_url(pagination.items),
-        page_items=_inject_pins(pagination.items, "province", page),
+        page_items=_inject_pins(_mix_stories(pagination.items), "province", page),
     )
 
 
@@ -458,7 +536,7 @@ def nationaal():
         active_topic=active_topic,
         section_endpoint="main.nationaal",
         sources_by_url=_sources_by_url(pagination.items),
-        page_items=_inject_pins(pagination.items, "national", page),
+        page_items=_inject_pins(_mix_stories(pagination.items), "national", page),
     )
 
 
@@ -493,7 +571,7 @@ def internationaal():
         active_topic=active_topic,
         section_endpoint="main.internationaal",
         sources_by_url=_sources_by_url(pagination.items),
-        page_items=_inject_pins(pagination.items, "intl", page),
+        page_items=_inject_pins(_mix_stories(pagination.items), "intl", page),
     )
 
 
@@ -527,7 +605,7 @@ def alles():
         active_topic=active_topic,
         section_endpoint="main.alles",
         sources_by_url=_sources_by_url(pagination.items),
-        page_items=_inject_pins(pagination.items, "alles", page),
+        page_items=_inject_pins(_mix_stories(pagination.items), "alles", page),
     )
 
 
@@ -562,13 +640,53 @@ def redactie_post(post_id, slug):
     return render_template("main/redactie_post.html", post=post)
 
 
-# ── Stories (dormant — kept for backward compat / future use) ─────────────────
+# ── Stories ───────────────────────────────────────────────────────────────────
 
 @bp.route("/redactie/verhaal/<int:story_id>")
-def redactie_detail(story_id):
+@bp.route("/redactie/verhaal/<int:story_id>/<slug>")
+def redactie_detail(story_id, slug=None):
     story = Story.query.get_or_404(story_id)
-    articles = sorted(story.articles, key=lambda a: a.published_at or a.created_at, reverse=True)
-    return render_template("main/story_detail.html", story=story, articles=articles)
+    articles = sorted(
+        [a for a in story.articles if a.summary],
+        key=lambda a: a.published_at or a.created_at,
+        reverse=True,
+    )
+    sources_by_url = _sources_by_url(articles)
+
+    # Related stories and similar articles — use the most recent article as proxy
+    related_stories = []
+    similar_articles = []
+    if articles:
+        from ...services.clustering import find_similar_articles
+        member_ids = {a.id for a in story.articles}
+        similar_raw = find_similar_articles(articles[0], limit=20, exclude_ids=member_ids)
+
+        # Collect related stories from similar articles (excluding this story)
+        seen_story_ids = {story.id}
+        seen_article_ids = set()
+        for sim_article, _ in similar_raw:
+            for s in sim_article.stories:
+                if s.status == "active" and s.id not in seen_story_ids:
+                    seen_story_ids.add(s.id)
+                    story_arts = [a for a in s.articles if a.summary]
+                    if story_arts:
+                        related_stories.append((s, story_arts))
+
+        # Similar articles not belonging to any related story
+        related_story_article_ids = {a.id for _, arts in related_stories for a in arts}
+        for sim_article, score in similar_raw:
+            if sim_article.id not in related_story_article_ids:
+                similar_articles.append((sim_article, score))
+        similar_articles = similar_articles[:8]
+
+    return render_template(
+        "main/story_detail.html",
+        story=story,
+        articles=articles,
+        sources_by_url=sources_by_url,
+        related_stories=related_stories,
+        similar_articles=similar_articles,
+    )
 
 
 @bp.route("/verhalen")
@@ -713,6 +831,7 @@ def ingezonden_insturen():
 
 
 @bp.route("/ingezonden/bewerken/<token>", methods=["GET", "POST"])
+@limiter.limit("10 per minute; 30 per hour", methods=["POST"])
 def ingezonden_bewerken(token):
     opinion = Opinion.query.filter_by(token=token).first_or_404()
 

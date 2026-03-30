@@ -10,6 +10,8 @@
   {% for article in page_items %}
     {% if article.is_redactional_post %}
       {% include 'main/_redactional_card.html' %}
+    {% elif article.is_story_card %}
+      {% include 'main/_story_card.html' %}
     {% else %}
     <article class="article-card">
       <h2 class="article-title">

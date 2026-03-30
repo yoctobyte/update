@@ -60,6 +60,39 @@ def _is_worthy(article) -> bool:
     return False
 
 
+def _collapse_story_duplicates(articles: list[Article]) -> list[Article]:
+    """Keep one representative article per public story.
+
+    Frontpage storage remains article-based, but overview templates may render a
+    qualifying article as a story card. Collapsing here keeps `frontpage_items`
+    aligned with that visible result instead of storing multiple member articles
+    from the same story.
+
+    Only active stories with a description are considered "public stories".
+    Stories that are still suggested/draft-like do not collapse their members.
+    """
+    result: list[Article] = []
+    seen_story_ids: set[int] = set()
+
+    for article in articles:
+        public_story = next(
+            (
+                story for story in article.stories
+                if story.status == "active" and story.description
+            ),
+            None,
+        )
+        if public_story is None:
+            result.append(article)
+            continue
+        if public_story.id in seen_story_ids:
+            continue
+        seen_story_ids.add(public_story.id)
+        result.append(article)
+
+    return result
+
+
 def evaluate_pending(app) -> int:
     """Call LLM on national articles in the 72h window that haven't been evaluated yet.
     Returns number of articles evaluated."""
@@ -125,6 +158,7 @@ def update_frontpage(app, dry_run: bool = False) -> list:
         )
 
         worthy = [a for a in candidates if _is_worthy(a)]
+        worthy = _collapse_story_duplicates(worthy)
 
         if dry_run:
             return worthy

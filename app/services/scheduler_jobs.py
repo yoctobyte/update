@@ -129,6 +129,33 @@ def _refresh_topic_counts(app) -> None:
         logger.info("Topic article counts refreshed (%d topics with articles)", len(counts))
 
 
+def _describe_pending_stories(app) -> None:
+    """Generate descriptions for stories that have 2+ summarized articles but no description yet.
+
+    Acts as a safety net for stories whose articles were not yet summarized when
+    clustering ran — the auto_merge trigger fires immediately but articles may
+    arrive with a delay on their summaries.
+    """
+    from ..models import Story
+    from .clustering import generate_story_description
+
+    with app.app_context():
+        candidates = Story.query.filter(
+            Story.description.is_(None),
+            Story.status.in_(["suggested", "active"]),
+        ).all()
+
+        updated = 0
+        for story in candidates:
+            summarized = [a for a in story.articles if a.summary]
+            if len(summarized) >= 2:
+                if generate_story_description(story):
+                    updated += 1
+
+        if updated:
+            logger.info("DESCRIBE: generated descriptions for %d stories", updated)
+
+
 def register_jobs(scheduler, app) -> None:
     from .fetcher import fetch_all_active
     from .extractor import extract_all_pending, tag_untagged_articles
@@ -239,6 +266,16 @@ def register_jobs(scheduler, app) -> None:
     scheduler.add_job(
         id="update_frontpage",
         func=_wrap("update_frontpage", update_frontpage),
+        args=[app],
+        trigger="interval",
+        minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="describe_pending_stories",
+        func=_wrap("describe_pending_stories", _describe_pending_stories),
         args=[app],
         trigger="interval",
         minutes=30,

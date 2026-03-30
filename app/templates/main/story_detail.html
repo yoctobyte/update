@@ -14,19 +14,20 @@
 
   {% if story.description %}
     <div class="story-summary">
-      <h2>Samenvatting</h2>
-      <p>{{ story.description }}</p>
+      <p class="lead">{{ story.description }}</p>
     </div>
   {% endif %}
 
   <div class="story-articles">
-    <h2>Artikelen</h2>
+    <h2>Bronartikelen</h2>
     {% for article in articles %}
       <article class="article-card">
         <div class="article-meta">
+          <img src="{{ url_for('main.source_favicon', source_id=article.source.id) }}"
+               class="source-favicon" alt="{{ article.source.name }}" width="14" height="14">
           <span class="source">{{ article.source.name }}</span>
           {% if article.published_at %}
-            <time>{{ article.published_at.strftime('%d %b %Y') }}</time>
+            <time>· {{ article.published_at.strftime('%-d %b %Y') }}</time>
           {% endif %}
         </div>
         <h3><a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a></h3>
@@ -42,6 +43,46 @@
       <h2>Verder lezen</h2>
       <p>{{ story.further_reading }}</p>
     </div>
+  {% endif %}
+
+  {% if related_stories %}
+    <section class="article-detail-section">
+      <h2>Gerelateerde verhalen</h2>
+      {% for rel_story, rel_articles in related_stories %}
+        <div class="related-story">
+          <a href="{{ url_for('main.redactie_detail', story_id=rel_story.id) }}" class="related-story-title">
+            ↗ {{ rel_story.title }}
+          </a>
+          <ul class="related-article-list">
+            {% for a in rel_articles[:5] %}
+              <li>
+                <img src="{{ url_for('main.source_favicon', source_id=a.source.id) }}"
+                     class="source-favicon" alt="{{ a.source.name }}" width="14" height="14">
+                <a href="{{ article_url(a) }}">{{ a.title }}</a>
+                <span class="meta-muted">— {{ a.source.name }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  {% if similar_articles %}
+    <section class="article-detail-section">
+      <h2>Vergelijkbare artikelen</h2>
+      <ul class="similar-article-list">
+        {% for a, score in similar_articles %}
+          <li>
+            <div class="similar-title-row">
+              <span class="similar-score">{{ "%.0f%%"|format(score * 100) }}</span>
+              <a href="{{ article_url(a) }}">{{ a.title }}</a>
+            </div>
+            <p class="similar-summary">{{ a.summary }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
   {% endif %}
 </div>
 {% endblock %}
