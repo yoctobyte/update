@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Artikel wordt verwerkt{% endblock %}
+{% block content %}
+<div class="prose-page">
+
+  <nav class="breadcrumb">
+    <a href="{{ url_for('main.index') }}">← Nieuws</a>
+  </nav>
+
+  <h1>{{ article.title or 'Artikel wordt verwerkt' }}</h1>
+
+  <p class="search-meta">
+    Dit artikel is ontvangen maar nog niet verwerkt — mogelijk kon het niet worden opgehaald, of is het samengevoegd met een ander artikel.
+    {% if article.url %}
+      <a href="{{ article.url }}" target="_blank" rel="noopener">Lees het origineel ↗</a>
+    {% endif %}
+  </p>
+
+</div>
+
+{% if results %}
+<p class="search-meta">Mogelijk verwante artikelen:</p>
+<div class="article-list">
+  {% for a, score in results %}
+    <article class="article-card">
+      <h2 class="article-title">
+        <a href="{{ article_url(a) }}">{{ a.title }}</a>
+      </h2>
+      {% set desc = a.summary or a.short_text %}
+      {% if desc %}
+        <a href="{{ article_url(a) }}" class="article-snippet-link">
+          <p class="article-snippet">{{ desc }}</p>
+        </a>
+      {% endif %}
+      <div class="article-footer">
+        <div class="article-sources">
+          {% for src in sources_by_url.get(a.url, [a.source]) %}
+            <a href="{{ a.url }}" target="_blank" rel="noopener"
+               title="{{ src.name }}" class="source-favicon-link">
+              <img src="{{ url_for('main.source_favicon', source_id=src.id) }}"
+                   class="source-favicon" alt="{{ src.name }}"
+                   width="16" height="16" loading="lazy">
+            </a>
+          {% endfor %}
+          <span class="geo-badge geo-{{ a.geo_scope }}">{{ a.geo_scope }}</span>
+          <time class="article-date">
+            {%- if a.published_at -%}
+              {{ a.published_at.strftime('%-d %b %H:%M') }}
+            {%- elif a.created_at -%}
+              {{ a.created_at.strftime('%-d %b %H:%M') }}
+            {%- endif -%}
+          </time>
+        </div>
+        <a href="{{ a.url }}" target="_blank" rel="noopener"
+           class="ext-indicator" title="Lees op {{ a.source.name }}">↗</a>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

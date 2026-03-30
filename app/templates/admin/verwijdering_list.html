@@ -1,0 +1,105 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Verwijderverzoeken{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Verwijderverzoeken</h1>
+</div>
+
+{% set type_labels = {'tip': 'Tip redactie', 'url': 'URL-verwijdering', 'source': 'Bronverwijdering'} %}
+{% set status_labels = {'pending': 'In behandeling', 'resolved': 'Afgehandeld', 'dismissed': 'Afgewezen'} %}
+
+{# ── Pending ───────────────────────────────────────────────────────────────── #}
+{% if pending %}
+<section>
+  <h2>Openstaand ({{ pending|length }})</h2>
+  {% for r in pending %}
+  <div class="vv-card vv-card--{{ r.request_type }}">
+    <div class="vv-card-header">
+      <span class="vv-type-badge vv-type-{{ r.request_type }}">{{ type_labels[r.request_type] }}</span>
+      <span class="vv-date">{{ r.created_at.strftime('%d %b %Y %H:%M') if r.created_at else '—' }}</span>
+    </div>
+
+    {% if r.target %}
+    <p><strong>Doel:</strong>
+      {% if r.target.startswith('http') %}
+        <a href="{{ r.target }}" target="_blank" rel="noopener">{{ r.target }}</a>
+      {% else %}
+        {{ r.target }}
+      {% endif %}
+    </p>
+    {% endif %}
+
+    <p><strong>Omschrijving:</strong><br>{{ r.description }}</p>
+
+    {% if r.contact_name or r.email or r.phone %}
+    <p><strong>Contact:</strong>
+      {{ r.contact_name or '' }}
+      {% if r.email %} &mdash; <a href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}
+      {% if r.phone %} &mdash; {{ r.phone }}{% if r.phone_app %} ({{ r.phone_app }}){% endif %}{% endif %}
+    </p>
+    {% else %}
+    <p><em>Anoniem ingediend</em></p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('admin.verwijdering_update', req_id=r.id) }}" class="vv-update-form">
+      <div class="field-row">
+        <select name="status">
+          <option value="pending"   {% if r.status == 'pending'   %}selected{% endif %}>In behandeling</option>
+          <option value="resolved"  {% if r.status == 'resolved'  %}selected{% endif %}>Afgehandeld</option>
+          <option value="dismissed" {% if r.status == 'dismissed' %}selected{% endif %}>Afgewezen</option>
+        </select>
+        <input type="text" name="admin_notes" placeholder="Notitie (intern)"
+               value="{{ r.admin_notes or '' }}" style="flex:1">
+        <button type="submit" class="btn btn-small">Opslaan</button>
+      </div>
+    </form>
+  </div>
+  {% endfor %}
+</section>
+{% else %}
+<p class="muted">Geen openstaande verzoeken.</p>
+{% endif %}
+
+{# ── Handled ───────────────────────────────────────────────────────────────── #}
+{% if done %}
+<section>
+  <h2>Afgehandeld (laatste 50)</h2>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Type</th><th>Doel</th><th>Contact</th><th>Status</th><th>Notitie</th><th>Bijgewerkt</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in done %}
+      <tr>
+        <td>{{ type_labels[r.request_type] }}</td>
+        <td>
+          {% if r.target %}
+            {% if r.target.startswith('http') %}
+              <a href="{{ r.target }}" target="_blank" rel="noopener">{{ r.target|truncate(60) }}</a>
+            {% else %}
+              {{ r.target }}
+            {% endif %}
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ r.contact_name or '—' }}</td>
+        <td>{{ status_labels.get(r.status, r.status) }}</td>
+        <td>{{ r.admin_notes or '—' }}</td>
+        <td>{{ r.updated_at.strftime('%d %b %Y') if r.updated_at else '—' }}</td>
+        <td class="actions">
+          <form method="post" action="{{ url_for('admin.verwijdering_update', req_id=r.id) }}" style="display:inline">
+            <input type="hidden" name="status" value="pending">
+            <input type="hidden" name="admin_notes" value="{{ r.admin_notes or '' }}">
+            <button type="submit" class="btn btn-small">Heropenen</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+
+{% endblock %}

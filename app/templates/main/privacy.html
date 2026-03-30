@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Privacyverklaring{% endblock %}
+{% block content %}
+<article class="prose-page">
+
+  <h1>Privacyverklaring</h1>
+
+  <p class="lead">
+    Wij verwerken zo min mogelijk persoonsgegevens. In de meeste gevallen helemaal geen.
+    Hieronder leggen wij uit wanneer dat anders is, en waarom.
+  </p>
+
+  {# ── Wie zijn wij ──────────────────────────────────────────────────────────── #}
+  <h2>Verwerkingsverantwoordelijke</h2>
+  {% if contact and contact.name %}
+  <p>
+    {{ contact.name }}{% if contact.address %}, {{ contact.address }}{% endif %}.
+    {% if contact.email %}
+      Bereikbaar via <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>.
+    {% endif %}
+  </p>
+  {% else %}
+  <p>
+    {{ site_name }}, bereikbaar via het <a href="{{ url_for('main.about') }}#contact">contactformulier</a>.
+  </p>
+  {% endif %}
+
+  {# ── Wat wij NIET doen ─────────────────────────────────────────────────────── #}
+  <h2>Wat wij niet doen</h2>
+  <p>
+    Wij plaatsen <strong>geen tracking-cookies</strong>, gebruiken <strong>geen analytics</strong>
+    van derden en verkopen <strong>geen gegevens</strong>. Wij tonen geen advertenties.
+    Uw voorkeuren (thema, lettergrootte) worden uitsluitend lokaal in uw browser opgeslagen
+    en verlaten uw apparaat nooit.
+  </p>
+
+  {# ── Wat wij WEL verwerken ─────────────────────────────────────────────────── #}
+  <h2>Wanneer wij wél persoonsgegevens verwerken</h2>
+
+  <p>
+    En nu komen we bij een juridische curiositeit die wij zelf ook vermakelijk vinden:
+    <strong>de enige persoonsgegevens die wij opslaan, zijn gegevens die u vrijwillig
+    aan ons verstrekt wanneer u vraagt om verwijdering van uw gegevens.</strong>
+    Het AVG verplicht ons uw verzoek te registreren. U levert dus gegevens aan
+    om te vragen dat wij geen gegevens opslaan. Wij begrijpen de ironie volledig.
+  </p>
+
+  <p>Concreet verwerken wij persoonsgegevens in de volgende gevallen:</p>
+
+  <table class="privacy-table">
+    <thead>
+      <tr>
+        <th>Situatie</th>
+        <th>Gegevens</th>
+        <th>Grondslag</th>
+        <th>Bewaartermijn</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Contactformulier</td>
+        <td>Naam, e-mailadres (optioneel), bericht</td>
+        <td>Gerechtvaardigd belang (reageren op uw vraag)</td>
+        <td>1 jaar</td>
+      </tr>
+      <tr>
+        <td>Ingezonden stuk</td>
+        <td>Schuilnaam, e-mailadres (optioneel), tekst</td>
+        <td>Uitvoering overeenkomst (publicatieverzoek)</td>
+        <td>Zolang gepubliceerd; ongepubliceerd: 90 dagen</td>
+      </tr>
+      <tr>
+        <td>Verwijderingsverzoek</td>
+        <td>Naam, e-mail en/of telefoonnummer, omschrijving</td>
+        <td>Wettelijke verplichting (AVG Art. 17)</td>
+        <td>2 jaar (aantoonbaarheid afhandeling)</td>
+      </tr>
+      <tr>
+        <td>Serverlogboeken</td>
+        <td>IP-adres, tijdstip, opgevraagde URL</td>
+        <td>Gerechtvaardigd belang (beveiliging, foutopsporing)</td>
+        <td>90 dagen</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Serverlogboeken worden beheerd door het besturingssysteem en de webserver,
+    niet door deze applicatie. Zij worden niet gekoppeld aan andere gegevens.
+  </p>
+
+  {# ── Uw rechten ────────────────────────────────────────────────────────────── #}
+  <h2>Uw rechten</h2>
+  <p>Onder de AVG heeft u de volgende rechten:</p>
+  <ul>
+    <li><strong>Inzage</strong> — u kunt opvragen welke gegevens wij van u bewaren.</li>
+    <li><strong>Rectificatie</strong> — u kunt onjuiste gegevens laten corrigeren.</li>
+    <li><strong>Wissing</strong> — u kunt verzoeken uw gegevens te verwijderen, tenzij een wettelijke bewaarplicht geldt.</li>
+    <li><strong>Beperking</strong> — u kunt verzoeken de verwerking tijdelijk te beperken.</li>
+    <li><strong>Bezwaar</strong> — u kunt bezwaar maken tegen verwerking op basis van gerechtvaardigd belang.</li>
+  </ul>
+  <p>
+    Verzoeken kunt u indienen via ons
+    <a href="{{ url_for('main.verzoek_verwijdering') }}">verwijderingsformulier</a>
+    of via <a href="{{ url_for('main.about') }}#contact">het contactformulier</a>.
+    Wij streven ernaar binnen <strong>30 dagen</strong> te reageren.
+    U heeft tevens het recht een klacht in te dienen bij de
+    <a href="https://www.autoriteitpersoonsgegevens.nl" target="_blank" rel="noopener">
+      Autoriteit Persoonsgegevens</a>.
+  </p>
+
+  {# ── Geen derden ───────────────────────────────────────────────────────────── #}
+  <h2>Delen met derden</h2>
+  <p>
+    Wij delen geen persoonsgegevens met derden, tenzij dit wettelijk verplicht is.
+    Wij maken geen gebruik van externe verwerkers voor de opslag van uw gegevens —
+    alles draait op eigen hardware in Nederland.
+  </p>
+
+  {# ── Wijzigingen ───────────────────────────────────────────────────────────── #}
+  <h2>Wijzigingen</h2>
+  <p>
+    Wij kunnen deze verklaring aanpassen. De meest actuele versie is altijd op deze pagina te vinden.
+  </p>
+
+</article>
+{% endblock %}

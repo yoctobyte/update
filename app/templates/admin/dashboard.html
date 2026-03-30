@@ -59,4 +59,11 @@
 {% if not failing_sources and not pending_rules and pending_merges == 0 %}
   <p class="all-good">Alles in orde.</p>
 {% endif %}
+
+<hr style="margin: 2rem 0;">
+<h2>Dossiers</h2>
+<form method="post" action="{{ url_for('admin.dossiers_refresh') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn">Dossiers vernieuwen</button>
+</form>
 {% endblock %}

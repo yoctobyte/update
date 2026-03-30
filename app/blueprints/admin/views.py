@@ -1065,6 +1065,28 @@ def contact_read(msg_id):
     return redirect(url_for("admin.opinie"))
 
 
+@bp.route("/verwijdering")
+@login_required
+def verwijdering_list():
+    from ...models import RemovalRequest
+    pending = RemovalRequest.query.filter_by(status="pending").order_by(RemovalRequest.created_at.asc()).all()
+    done    = RemovalRequest.query.filter(RemovalRequest.status != "pending").order_by(RemovalRequest.updated_at.desc()).limit(50).all()
+    return render_template("admin/verwijdering_list.html", pending=pending, done=done)
+
+
+@bp.route("/verwijdering/<int:req_id>/update", methods=["POST"])
+@login_required
+def verwijdering_update(req_id):
+    from ...models import RemovalRequest
+    from datetime import datetime, timezone
+    req = RemovalRequest.query.get_or_404(req_id)
+    req.status      = request.form.get("status", req.status)
+    req.admin_notes = request.form.get("admin_notes", "").strip() or None
+    req.updated_at  = datetime.now(timezone.utc)
+    db.session.commit()
+    return redirect(url_for("admin.verwijdering_list"))
+
+
 @bp.route("/regels/<int:rule_id>/bewerk", methods=["POST"])
 @login_required
 def rule_edit(rule_id):
@@ -1483,3 +1505,14 @@ def _create_initial_rules(source: Source) -> None:
             source_id=source.id, rule_type="css_selector", rule_definition="",
             approved=False, scope="persistent", rule_purpose=purpose,
         ))
+
+
+# ── Dossiers ──────────────────────────────────────────────────────────────────
+
+@bp.route("/dossiers/refresh", methods=["POST"])
+@login_required
+def dossiers_refresh():
+    from ...blueprints.dossiers.views import refresh_all_dossiers
+    count = refresh_all_dossiers()
+    flash(f"{count} dossier(s) vernieuwd.", "success")
+    return redirect(url_for("admin.dashboard"))

@@ -46,6 +46,11 @@
              placeholder="Voor eventuele vragen of publicatiemelding">
     </div>
 
+    <p class="opinion-copyright-notice">
+      Door in te sturen gaat u akkoord met publicatie onder redactionele verantwoordelijkheid van
+      {{ site_name }} en draagt u het auteursrecht op de ingezonden tekst over aan {{ site_name }}.
+    </p>
+
     <div class="field-actions">
       <button type="submit" class="btn">Insturen</button>
       <a href="{{ url_for('main.ingezonden_list') }}" class="btn btn-secondary">Annuleer</a>

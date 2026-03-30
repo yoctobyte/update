@@ -65,6 +65,13 @@ def create_app(town: str = None) -> Flask:
     csrf.init_app(app)
     limiter.init_app(app)
 
+    # Rate limit error — friendly page instead of bare 429
+    from flask_limiter.errors import RateLimitExceeded
+    @app.errorhandler(RateLimitExceeded)
+    def _rate_limited(e):
+        from flask import render_template as _rt
+        return _rt("errors/429.html"), 429
+
     # Security headers
     @app.after_request
     def _security_headers(response):
@@ -83,9 +90,11 @@ def create_app(town: str = None) -> Flask:
     # Blueprints
     from .blueprints.main import bp as main_bp
     from .blueprints.admin import bp as admin_bp
+    from .blueprints.dossiers import bp as dossiers_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(dossiers_bp)
     csrf.exempt(main_bp)
 
     # Markdown filter

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Te veel verzoeken{% endblock %}
+{% block content %}
+<article class="prose-page">
+  <h1>Te veel verzoeken</h1>
+  <p class="lead">U heeft dit formulier te vaak ingevuld. Probeer het over een uur opnieuw.</p>
+  <p><a href="{{ url_for('main.index') }}">Terug naar de voorpagina</a></p>
+</article>
+{% endblock %}

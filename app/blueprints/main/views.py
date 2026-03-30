@@ -290,7 +290,7 @@ def article_detail_redirect(article_id):
 
 @bp.route("/nieuws/<int:article_id>/<slug>")
 def article_detail(article_id, slug):
-    article = Article.query.filter_by(id=article_id).filter(Article.summary.isnot(None)).first()
+    article = Article.query.filter_by(id=article_id).first()
     if article is None:
         from ...services.clustering import search_by_text
         query = slug.replace("-", " ")
@@ -302,6 +302,18 @@ def article_detail(article_id, slug):
             results=results,
             sources_by_url=sources_by_url,
         ), 404
+    if article.summary is None:
+        from ...services.clustering import search_by_text
+        query = (article.title or slug.replace("-", " "))
+        results = search_by_text(query, limit=25)
+        sources_by_url = _sources_by_url([a for a, _ in results])
+        return render_template(
+            "main/article_202.html",
+            article=article,
+            query=query,
+            results=results,
+            sources_by_url=sources_by_url,
+        ), 202
 
     # Other fetched copies of the same URL (from different sources)
     same_url_others = Article.query.filter(
@@ -774,6 +786,12 @@ def zoeken():
 
 # ── About / Over ons ──────────────────────────────────────────────────────────
 
+@bp.route("/privacy")
+def privacy():
+    cfg = _town_cfg()
+    return render_template("main/privacy.html", contact=cfg.get("contact", {}))
+
+
 @bp.route("/over-ons")
 def about():
     cfg = _town_cfg()
@@ -811,6 +829,55 @@ def contact_submit():
                            contact=cfg.get("contact", {}),
                            sponsors=cfg.get("sponsors", []),
                            form_sent=True)
+
+
+# ── Verzoek om verwijdering ───────────────────────────────────────────────────
+
+@bp.route("/verzoek-verwijdering", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
+def verzoek_verwijdering():
+    from ...models import RemovalRequest
+    if request.method != "POST":
+        prefill = {
+            "request_type": request.args.get("type", ""),
+            "target":        request.args.get("target", ""),
+        }
+        return render_template("main/verzoek_verwijdering.html", prefill=prefill)
+
+    rtype       = request.form.get("request_type", "").strip()
+    target      = request.form.get("target", "").strip() or None
+    description = request.form.get("description", "").strip()
+    name        = request.form.get("contact_name", "").strip() or None
+    email       = request.form.get("email", "").strip() or None
+    phone       = request.form.get("phone", "").strip() or None
+    phone_app   = request.form.get("phone_app", "").strip() or None
+
+    errors = []
+    if rtype not in ("tip", "url", "source"):
+        errors.append("Kies een type verzoek.")
+    if not description:
+        errors.append("Omschrijving is verplicht.")
+    if rtype in ("url", "source"):
+        if not name:
+            errors.append("Naam is verplicht voor dit type verzoek.")
+        if not email and not phone:
+            errors.append("Vul ten minste een e-mailadres of telefoonnummer in.")
+
+    if errors:
+        return render_template("main/verzoek_verwijdering.html",
+                               errors=errors, form=request.form)
+
+    db.session.add(RemovalRequest(
+        request_type=rtype,
+        target=target,
+        description=description,
+        contact_name=name,
+        email=email,
+        phone=phone,
+        phone_app=phone_app,
+    ))
+    db.session.commit()
+    return render_template("main/verzoek_verwijdering.html", sent=True)
 
 
 # ── Uploaded images ───────────────────────────────────────────────────────────
@@ -928,7 +995,9 @@ def sitemap_xml():
         ("/redactie",      "weekly",  "0.8"),
         ("/agenda",        "daily",   "0.7"),
         ("/ingezonden",    "weekly",  "0.6"),
-        ("/over-ons",      "monthly", "0.5"),
+        ("/over-ons",               "monthly", "0.5"),
+        ("/verzoek-verwijdering",   "yearly",  "0.3"),
+        ("/privacy",                "yearly",  "0.2"),
         ("/zoeken",        "weekly",  "0.4"),
     ]
     for path, freq, pri in static_pages:

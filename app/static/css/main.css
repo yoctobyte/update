@@ -176,7 +176,7 @@ h1, h2, h3, h4 {
   border-left: 0px solid var(--c-util-border);
 }
 .util-right { margin-left: auto; }
-.util-admin-group { margin-left: auto !important; border-left: none; }
+.util-admin-group { border-left: none; }
 
 .util-label {
   font-size: 0.72rem;
@@ -901,6 +901,21 @@ a.tag:hover { background: var(--c-accent); color: #fff; text-decoration: none; }
   margin-bottom: 0.75rem;
 }
 
+.article-ai-footer {
+  margin-top: 2.5rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--c-border);
+  font-size: 0.8rem;
+  color: var(--c-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  align-items: center;
+}
+.article-ai-sep  { opacity: 0.4; }
+.article-ai-tip  { color: var(--c-text-muted); text-decoration: underline; }
+.article-ai-tip:hover { color: var(--c-accent); }
+
 .article-full-text {
   margin: 1.5rem 0;
   border: 1px solid var(--c-border);
@@ -1067,6 +1082,54 @@ a.ext-indicator:hover { opacity: 1; color: var(--c-accent); }
 }
 .contact-form textarea { resize: vertical; }
 
+/* ── Verzoek om verwijdering form ────────────────────────────────────────── */
+#verzoek-form .field         { margin-bottom: 1rem; }
+#verzoek-form label          { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.9rem; }
+#verzoek-form input[type="text"],
+#verzoek-form input[type="url"],
+#verzoek-form input[type="email"],
+#verzoek-form input[type="tel"],
+#verzoek-form textarea,
+#verzoek-form select         {
+  width: 100%; max-width: 560px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--c-border);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-sizing: border-box;
+}
+details[id^="section-"]      { border: 1px solid var(--c-border); border-radius: 6px;
+                               margin-bottom: 0.8rem; }
+details[id^="section-"] + details[id^="section-"] { margin-top: 0; }
+.vv-summary                  { padding: 0.75rem 1rem; font-weight: 600; cursor: pointer;
+                               list-style: none; display: flex; align-items: center; gap: 0.5rem; }
+.vv-summary::before          { content: '▶'; font-size: 0.7em; transition: transform 0.15s; }
+details[id^="section-"][open] > .vv-summary::before { transform: rotate(90deg); }
+.vv-section                  { border-top: 1px solid var(--c-border); padding: 1rem 1rem 0.5rem; }
+.vv-intro                    { margin-bottom: 0.8rem; font-size: 0.95rem; }
+.vv-notice                   { background: var(--c-tag-bg); border-left: 3px solid var(--c-accent);
+                               padding: 0.6rem 0.9rem; border-radius: 0 4px 4px 0; margin-bottom: 0.8rem; }
+.vv-contact-row              { display: flex; gap: 0.5rem; flex-wrap: wrap; max-width: 560px; }
+.vv-contact-row input        { flex: 1; min-width: 140px; }
+
+/* Admin verwijdering cards */
+.vv-card                     { border: 1px solid var(--c-border); border-radius: 6px;
+                               padding: 1rem 1.2rem; margin-bottom: 1.2rem; }
+.vv-card--source             { border-left: 4px solid var(--c-accent); }
+.vv-card--url                { border-left: 4px solid #e8a020; }
+.vv-card--tip                { border-left: 4px solid #5a9e5a; }
+.vv-card-header              { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem; }
+.vv-type-badge               { font-size: 0.78rem; font-weight: 700; padding: 0.2rem 0.6rem;
+                               border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+.vv-type-tip                 { background: #d4edd4; color: #2d6e2d; }
+.vv-type-url                 { background: #fdecc8; color: #7a4d00; }
+.vv-type-source              { background: #fdd; color: #8b0000; }
+.vv-date                     { font-size: 0.82rem; color: var(--c-text-muted); }
+.vv-update-form .field-row   { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; }
+
 /* Sponsor list */
 .sponsor-list { list-style: none; padding: 0; }
 .sponsor-list li { margin-bottom: 0.5rem; }
@@ -1159,6 +1222,34 @@ a.ext-indicator:hover { opacity: 1; color: var(--c-accent); }
   border-top: 1px solid var(--c-border);
   background: var(--c-surface-alt);
 }
+.footer-links { margin-top: 0.3rem; }
+.footer-links a { color: var(--c-text-muted); text-decoration: none; }
+.footer-links a:hover { text-decoration: underline; }
+.footer-copyright { margin-top: 0.3rem; font-size: 0.8rem; color: var(--c-text-muted); }
+
+.opinion-copyright-notice { font-size: 0.82rem; color: var(--c-text-muted); margin: 1rem 0 0.5rem; }
+
+/* ── Dossiers ────────────────────────────────────────────────────────────── */
+.dossier-list          { list-style: none; padding: 0; margin: 1.5rem 0; }
+.dossier-item          { padding: 1rem 0; border-bottom: 1px solid var(--c-border); }
+.dossier-item:last-child { border-bottom: none; }
+.dossier-title         { font-size: 1.1rem; font-weight: 600; text-decoration: none; color: var(--c-link); }
+.dossier-title:hover   { text-decoration: underline; }
+.dossier-desc          { margin: 0.3rem 0 0.2rem; color: var(--c-text-muted); font-size: 0.92rem; }
+.dossier-date          { font-size: 0.82rem; }
+.dossier-content       { margin-top: 1.5rem; }
+.dossier-content h2    { margin-top: 2rem; }
+.dossier-content h3    { margin-top: 1.5rem; }
+.dossier-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+.dossier-content th,
+.dossier-content td    { padding: 0.4rem 0.6rem; border: 1px solid var(--c-border); text-align: left; }
+.dossier-content th    { background: var(--c-surface-alt); }
+
+.privacy-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; }
+.privacy-table th { text-align: left; padding: 0.4rem 0.7rem; background: var(--c-surface-alt);
+                    border-bottom: 2px solid var(--c-border); }
+.privacy-table td { padding: 0.4rem 0.7rem; border-bottom: 1px solid var(--c-border);
+                    vertical-align: top; }
 
 
 /* ══════════════════════════════════════════════════════════════════════════
