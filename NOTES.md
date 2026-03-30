@@ -4,11 +4,15 @@
 
 For shared multi-agent progress, handover, and git-state notes, read and update:
 
+- `AGENTS.md`
+- `docs/PROJECT_STATE.yaml`
 - `docs/PROJECT_META.md`
 
 Human-facing rule of thumb:
 
 - `NOTES.md` = practical project instructions for a person opening the repo
+- `AGENTS.md` = top-level agent compatibility entrypoint
+- `docs/PROJECT_STATE.yaml` = structured project progress / goals / bugs / todos
 - `docs/PROJECT_META.md` = deeper agent handover, status, and coordination notes
 
 ## First-time setup

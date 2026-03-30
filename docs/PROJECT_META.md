@@ -1,5 +1,5 @@
 # Project Meta
-**Purpose:** shared project-status, handover, and agent-coordination file
+**Purpose:** shared deep handover, constraints, and agent-coordination file
 **Last updated:** 2026-03-30
 **Branch context:** `dev`
 **Live serving assumption:** production runs from `main`; do not disturb the running instance from `dev`
@@ -15,6 +15,9 @@ Principle:
 Human-oriented operational instructions should stay easy to find in:
 - [NOTES.md](/home/user/lokaalnieuws/NOTES.md)
 
+Structured cross-agent state should live in:
+- [PROJECT_STATE.yaml](/home/user/lokaalnieuws/docs/PROJECT_STATE.yaml)
+
 Agent-oriented continuity can assume more context and live here:
 - git state
 - handover notes
@@ -27,11 +30,18 @@ Agent-oriented continuity can assume more context and live here:
 Any agent may edit this file.
 
 When updating:
+- update [PROJECT_STATE.yaml](/home/user/lokaalnieuws/docs/PROJECT_STATE.yaml) first when progress/goals/bugs/todos change
 - keep timestamps explicit: `YYYY-MM-DD HH:MM TZ`
 - update `Todo`, `Done`, and `Handover`
 - record whether work was committed or still dirty
 - record any constraints that the next agent must preserve
 - prefer short factual bullets over long prose
+
+Recommended agent read order:
+1. [AGENTS.md](/home/user/lokaalnieuws/AGENTS.md)
+2. [PROJECT_STATE.yaml](/home/user/lokaalnieuws/docs/PROJECT_STATE.yaml)
+3. [PROJECT_META.md](/home/user/lokaalnieuws/docs/PROJECT_META.md)
+4. [NOTES.md](/home/user/lokaalnieuws/NOTES.md)
 
 ## Working Constraints
 
@@ -113,7 +123,8 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
 
 If another agent picks this up next:
 
-- Read this file first.
+- Read [AGENTS.md](/home/user/lokaalnieuws/AGENTS.md) first.
+- Then read [PROJECT_STATE.yaml](/home/user/lokaalnieuws/docs/PROJECT_STATE.yaml).
 - Then read:
   - [NOTES.md](/home/user/lokaalnieuws/NOTES.md)
   - [security_review_2026-03-30.md](/home/user/lokaalnieuws/docs/security_review_2026-03-30.md)
@@ -176,18 +187,20 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
 - Confirmed that a new agent can recover the main branch/runtime constraints and current product direction from docs alone.
 - Tightened handover quality by recording the currently known dirty/untracked state here.
 - Added explicit human-vs-agent documentation split and committed it as `15efc4c`.
+- Added a structured cross-agent state file plus `AGENTS.md` / `CLAUDE.md` / `GEMINI.md` compatibility entrypoints.
 
 ### Todo
 - Keep this file current after each substantial coding session or commit.
 - When the themed-view work advances, move the most current implementation decision back into this file, not only into the concept note.
+- Keep `PROJECT_STATE.yaml` as the canonical source for progress/goals/bugs/todos.
 
 ### Handover
-- If you start fresh, read this file first, then `NOTES.md`, then the linked design/security docs.
+- If you start fresh, read `AGENTS.md`, then `PROJECT_STATE.yaml`, then this file, then `NOTES.md`.
 - Before editing, check whether the dirty state listed here still matches `git status`.
 
 ### Git
 - branch: `dev`
-- commit: `15efc4c`
+- commit: `faacc70`
 - dirty files left:
   - `.wageningen-test.pid`
   - `dossiers/`
