@@ -1,5 +1,16 @@
 # Project Notes
 
+## Meta / Handover
+
+For shared multi-agent progress, handover, and git-state notes, read and update:
+
+- `docs/PROJECT_META.md`
+
+Human-facing rule of thumb:
+
+- `NOTES.md` = practical project instructions for a person opening the repo
+- `docs/PROJECT_META.md` = deeper agent handover, status, and coordination notes
+
 ## First-time setup
 
 After cloning, run these steps once before starting the app:
