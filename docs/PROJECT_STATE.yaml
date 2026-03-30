@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: "2026-03-30 00:00 Europe/Amsterdam"
+last_updated: "2026-03-30 00:30 Europe/Amsterdam"
 project:
   name: "lokaalnieuws"
   branch: "dev"
@@ -16,10 +16,12 @@ read_order:
 progress:
   summary:
     - "Human-facing operational notes and agent-oriented meta handover docs are in place."
+    - "Shared multi-agent entrypoints now exist for OpenAI/Codex, Claude, and Gemini."
     - "Story/verhaal cards are integrated into overview pages and detail flows."
     - "Frontpage persistence now collapses to one representative article per public story."
     - "Public bearer-token opinion edit flow has rate limiting."
     - "Security review and themed-view concept docs were added on 2026-03-30."
+    - "The first lane implementation slice is underway: Uitgelicht now has a stable public route and homepage mapping is being made configurable."
   recently_completed:
     - id: "done-story-cards"
       status: "done"
@@ -37,17 +39,21 @@ progress:
       status: "done"
       date: "2026-03-30"
       item: "Added project handover docs for humans and agents."
+    - id: "done-multi-agent-entrypoints"
+      status: "done"
+      date: "2026-03-30"
+      item: "Added AGENTS.md plus Claude/Gemini compatibility shims and a structured PROJECT_STATE file."
 
 goals:
   current_primary:
     - id: "goal-multi-agent-state"
-      priority: "now"
+      priority: "active"
       item: "Make project progress, goals, bugs, and todos easy for multiple coding agents to discover and update consistently."
     - id: "goal-lane-architecture"
-      priority: "next"
+      priority: "active"
       item: "Turn the Uitgelicht / Vandaag / Week concept into implementable schema, routing, and ranking changes."
     - id: "goal-homepage-routing"
-      priority: "next"
+      priority: "active"
       item: "Keep homepage routing stable while allowing admin to choose the active main view."
   product_direction:
     - "Experiment-first themed views."
@@ -78,6 +84,10 @@ todos:
       priority: "now"
       status: "done"
       item: "Add shared agent entrypoints and structured project state so OpenAI, Claude, and Gemini workflows converge on the same in-repo truth."
+    - id: "todo-uitgelicht-route"
+      priority: "now"
+      status: "in_progress"
+      item: "Introduce a stable public Uitgelicht route and let admin choose whether '/' maps to Uitgelicht or lokaal nieuws."
     - id: "todo-lane-schema"
       priority: "next"
       status: "open"

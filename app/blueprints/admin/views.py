@@ -1247,16 +1247,22 @@ _FRONTPAGE_RULES = [
     ("depends",    "LLM beslist"),
     ("always_out", "Nooit op voorpagina"),
 ]
+_HOMEPAGE_VIEW_RULES = [
+    ("uitgelicht", "Uitgelicht"),
+    ("lokaal", "Lokaal"),
+]
 
 
 @bp.route("/voorpagina", methods=["GET", "POST"])
 @login_required
 def frontpage_settings():
     """Frontpage admin: topic rules + LLM prompt editor + go-live toggle."""
+    from ...services.frontpage import get_homepage_view, set_homepage_view
     from ...services.llm import _DEFAULT_FRONTPAGE_PROMPT
     topics = Topic.query.order_by(Topic.name).all()
     enabled = SiteSetting.get("frontpage_enabled", "0") == "1"
     llm_prompt = SiteSetting.get("frontpage_llm_prompt", "")
+    homepage_view = get_homepage_view()
 
     if request.method == "POST":
         action = request.form.get("action")
@@ -1279,12 +1285,21 @@ def frontpage_settings():
             flash("Prompt gereset naar standaard.", "success")
 
         elif action == "enable":
-            SiteSetting.set("frontpage_enabled", "1")
-            flash("Voorpagina ingeschakeld.", "success")
+            set_homepage_view("uitgelicht")
+            flash("Homepagina staat nu op Uitgelicht.", "success")
 
         elif action == "disable":
-            SiteSetting.set("frontpage_enabled", "0")
-            flash("Voorpagina uitgeschakeld. Bezoekers zien nu lokaal nieuws.", "success")
+            set_homepage_view("lokaal")
+            flash("Homepagina staat nu op lokaal nieuws.", "success")
+
+        elif action == "save_homepage_view":
+            selected = request.form.get("homepage_view", "").strip().lower()
+            if selected in {"uitgelicht", "lokaal"}:
+                set_homepage_view(selected)
+                label = "Uitgelicht" if selected == "uitgelicht" else "lokaal nieuws"
+                flash(f"Homepagina ingesteld op {label}.", "success")
+            else:
+                flash("Ongeldige homepage-keuze.", "error")
 
         return redirect(url_for("admin.frontpage_settings"))
 
@@ -1292,6 +1307,8 @@ def frontpage_settings():
         "admin/frontpage.html",
         topics=topics,
         rules=_FRONTPAGE_RULES,
+        homepage_rules=_HOMEPAGE_VIEW_RULES,
+        homepage_view=homepage_view,
         enabled=enabled,
         llm_prompt=llm_prompt,
         default_prompt=_DEFAULT_FRONTPAGE_PROMPT,

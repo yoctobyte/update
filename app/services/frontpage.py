@@ -28,6 +28,9 @@ def _app_context(app):
 logger = logging.getLogger(__name__)
 
 WINDOW_HOURS = 72
+HOMEPAGE_VIEW_UITGELICHT = "uitgelicht"
+HOMEPAGE_VIEW_LOKAAL = "lokaal"
+HOMEPAGE_VIEW_CHOICES = {HOMEPAGE_VIEW_UITGELICHT, HOMEPAGE_VIEW_LOKAAL}
 
 
 def _get_llm_prompt() -> str | None:
@@ -200,3 +203,23 @@ def get_current_frontpage():
 
 def frontpage_enabled() -> bool:
     return SiteSetting.get("frontpage_enabled", "0") == "1"
+
+
+def get_homepage_view() -> str:
+    """Return which main view should currently map to '/'.
+
+    Explicit homepage selection wins. Older installs fall back to the legacy
+    frontpage_enabled flag so existing behaviour is preserved until configured.
+    """
+    value = SiteSetting.get("homepage_view", "").strip().lower()
+    if value in HOMEPAGE_VIEW_CHOICES:
+        return value
+    return HOMEPAGE_VIEW_UITGELICHT if frontpage_enabled() else HOMEPAGE_VIEW_LOKAAL
+
+
+def set_homepage_view(value: str) -> None:
+    """Persist the public homepage view and keep the legacy flag aligned."""
+    if value not in HOMEPAGE_VIEW_CHOICES:
+        raise ValueError(f"Unsupported homepage view: {value}")
+    SiteSetting.set("homepage_view", value)
+    SiteSetting.set("frontpage_enabled", "1" if value == HOMEPAGE_VIEW_UITGELICHT else "0")

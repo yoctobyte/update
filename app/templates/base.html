@@ -155,10 +155,10 @@
       </svg>
     </a>
     <nav class="site-nav" aria-label="Hoofdnavigatie">
-      <a href="{{ url_for('main.index') }}"
-         {% if request.endpoint == 'main.index' %}class="active"{% endif %}>Voorpagina</a>
+      <a href="{{ url_for('main.uitgelicht') }}"
+         {% if request.endpoint == 'main.uitgelicht' or (request.endpoint == 'main.index' and homepage_view == 'uitgelicht') %}class="active"{% endif %}>Uitgelicht</a>
       <a href="{{ url_for('main.lokaal') }}"
-         {% if request.endpoint in ('main.lokaal', 'main.lokaal_redirect') %}class="active"{% endif %}>{{ site_town }}</a>
+         {% if request.endpoint in ('main.lokaal', 'main.lokaal_redirect') or (request.endpoint == 'main.index' and homepage_view == 'lokaal') %}class="active"{% endif %}>{{ site_town }}</a>
       <a href="{{ url_for('main.alles') }}"
          {% if request.endpoint == 'main.alles' %}class="active"{% endif %}>Alles</a>
       <a href="{{ url_for('main.regio') }}"

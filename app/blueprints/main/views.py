@@ -321,20 +321,35 @@ def lokaal_redirect():
 
 @bp.route("/")
 def index():
-    """Root: serve frontpage when enabled, otherwise fall through to local news."""
-    from ...services.frontpage import frontpage_enabled, get_current_frontpage
-    from ...models import Source as _Source
-    if frontpage_enabled():
-        articles = get_current_frontpage()
-        topics = Topic.query.order_by(Topic.name).all()
-        return render_template(
-            "main/frontpage.html",
-            articles=articles,
-            topics=topics,
-            sources_by_url=_sources_by_url(articles),
-            page_items=_inject_pins(_mix_stories(articles), "frontpage", 1),
-        )
+    """Root: dispatch to the configured main public view."""
+    from ...services.frontpage import (
+        HOMEPAGE_VIEW_UITGELICHT,
+        get_homepage_view,
+    )
+    if get_homepage_view() == HOMEPAGE_VIEW_UITGELICHT:
+        return _uitgelicht_response()
     return _lokaal_response()
+
+
+def _uitgelicht_response():
+    """Render the current Uitgelicht lane."""
+    from ...services.frontpage import get_current_frontpage
+
+    articles = get_current_frontpage()
+    topics = Topic.query.order_by(Topic.name).all()
+    return render_template(
+        "main/frontpage.html",
+        articles=articles,
+        topics=topics,
+        sources_by_url=_sources_by_url(articles),
+        page_items=_inject_pins(_mix_stories(articles), "frontpage", 1),
+    )
+
+
+@bp.route("/uitgelicht")
+def uitgelicht():
+    """Stable route for the curated main lane."""
+    return _uitgelicht_response()
 
 
 @bp.route("/nieuws/<int:article_id>")

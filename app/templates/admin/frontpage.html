@@ -8,29 +8,48 @@
 <div class="card mb-2">
   <h2>Status</h2>
   {% if enabled %}
-    <p class="status-ok">Voorpagina is <strong>ingeschakeld</strong>. Bezoekers zien de nieuwe voorpagina op <code>/</code>.</p>
+    <p class="status-ok">Uitgelicht is actief. De huidige homepage op <code>/</code> staat op <strong>{{ 'Uitgelicht' if homepage_view == 'uitgelicht' else 'lokaal nieuws' }}</strong>.</p>
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="disable">
-      <button type="submit" class="btn btn-danger">Voorpagina uitschakelen</button>
+      <button type="submit" class="btn btn-danger">Zet / op lokaal nieuws</button>
     </form>
   {% else %}
-    <p class="status-warn">Voorpagina is <strong>uitgeschakeld</strong>. Bezoekers zien lokaal nieuws. Schakel in als je tevreden bent met de preview.</p>
+    <p class="status-warn">De homepage op <code>/</code> staat nu op <strong>lokaal nieuws</strong>. Uitgelicht blijft beschikbaar op <code>/uitgelicht</code>.</p>
     <div class="btn-group">
       <a href="{{ url_for('admin.frontpage_preview') }}" class="btn">Preview bekijken</a>
       <form method="post" style="display:inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="enable">
-        <button type="submit" class="btn btn-primary">Voorpagina inschakelen</button>
+        <button type="submit" class="btn btn-primary">Zet / op Uitgelicht</button>
       </form>
     </div>
   {% endif %}
 </div>
 
+<div class="card mb-2">
+  <h2>Homepage</h2>
+  <p>Kies welke hoofdweergave op <code>/</code> moet landen. De route <code>/uitgelicht</code> blijft stabiel beschikbaar.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="save_homepage_view">
+    <div class="stack">
+      {% for value, label in homepage_rules %}
+        <label>
+          <input type="radio" name="homepage_view" value="{{ value }}"
+                 {% if homepage_view == value %}checked{% endif %}>
+          {{ label }}
+        </label>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-primary mt-1">Homepage opslaan</button>
+  </form>
+</div>
+
 {# ── Topic rules ── #}
 <div class="card mb-2">
   <h2>Onderwerp-regels</h2>
-  <p>Bepaal per onderwerp of artikelen altijd, nooit, of alleen op advies van de AI op de voorpagina komen.</p>
+  <p>Bepaal per onderwerp of artikelen altijd, nooit, of alleen op advies van de AI in Uitgelicht komen.</p>
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="action" value="save_rules">
@@ -66,7 +85,7 @@
 {# ── LLM Prompt editor ── #}
 <div class="card">
   <h2>AI-prompt aanpassen</h2>
-  <p>Deze prompt gebruikt de AI om te beoordelen of een nationaal artikel op de voorpagina hoort.
+  <p>Deze prompt gebruikt de AI om te beoordelen of een nationaal artikel in Uitgelicht hoort.
      Gebruik <code>{title}</code> en <code>{summary}</code> als plaatshouders.</p>
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

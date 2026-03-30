@@ -143,6 +143,11 @@ def create_app(town: str = None) -> Flask:
         static_version=_static_version,
     )
 
+    @app.context_processor
+    def inject_homepage_view():
+        from .services.frontpage import get_homepage_view
+        return {"homepage_view": get_homepage_view()}
+
     # Register /<town_slug> as the canonical local news URL.
     # /lokaal redirects here (301). The view function is defined in the blueprint
     # but not attached to a route there, so we can give it the right URL here.
