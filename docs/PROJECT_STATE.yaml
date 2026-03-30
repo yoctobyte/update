@@ -3,7 +3,7 @@ last_updated: "2026-03-30 00:45 Europe/Amsterdam"
 project:
   name: "lokaalnieuws"
   branch: "dev"
-  commit: "faacc70"
+  commit: "1b57ad4"
   live_branch: "main"
   purpose: "Canonical structured project state for multi-agent handover."
 
@@ -102,7 +102,7 @@ todos:
       item: "Build experiment-friendly lane ranking with higher/lower/similar comparisons and explainable metadata."
     - id: "todo-homepage-setting"
       priority: "next"
-      status: "open"
+      status: "done"
       item: "Allow admin to choose which main view maps to '/'."
     - id: "todo-security-followup"
       priority: "later"
