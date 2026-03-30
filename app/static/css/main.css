@@ -176,7 +176,7 @@ h1, h2, h3, h4 {
   border-left: 0px solid var(--c-util-border);
 }
 .util-right { margin-left: auto; }
-.util-admin-group { margin-left: auto !important; border-left: none; }
+.util-admin-group { border-left: none; }
 
 .util-label {
   font-size: 0.72rem;
@@ -1101,11 +1101,14 @@ a.ext-indicator:hover { opacity: 1; color: var(--c-accent); }
   color: var(--c-text);
   box-sizing: border-box;
 }
-#verzoek-form textarea       { resize: vertical; }
-.vv-type-choice              { border: none; padding: 0; margin: 1.2rem 0; }
-.vv-type-choice legend       { font-weight: 600; margin-bottom: 0.6rem; }
-.vv-radio                    { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; }
-.vv-section                  { display: none; border-top: 1px solid var(--c-border); padding-top: 1rem; margin-top: 0.5rem; }
+details[id^="section-"]      { border: 1px solid var(--c-border); border-radius: 6px;
+                               margin-bottom: 0.8rem; }
+details[id^="section-"] + details[id^="section-"] { margin-top: 0; }
+.vv-summary                  { padding: 0.75rem 1rem; font-weight: 600; cursor: pointer;
+                               list-style: none; display: flex; align-items: center; gap: 0.5rem; }
+.vv-summary::before          { content: '▶'; font-size: 0.7em; transition: transform 0.15s; }
+details[id^="section-"][open] > .vv-summary::before { transform: rotate(90deg); }
+.vv-section                  { border-top: 1px solid var(--c-border); padding: 1rem 1rem 0.5rem; }
 .vv-intro                    { margin-bottom: 0.8rem; font-size: 0.95rem; }
 .vv-notice                   { background: var(--c-tag-bg); border-left: 3px solid var(--c-accent);
                                padding: 0.6rem 0.9rem; border-radius: 0 4px 4px 0; margin-bottom: 0.8rem; }
@@ -1222,6 +1225,9 @@ a.ext-indicator:hover { opacity: 1; color: var(--c-accent); }
 .footer-links { margin-top: 0.3rem; }
 .footer-links a { color: var(--c-text-muted); text-decoration: none; }
 .footer-links a:hover { text-decoration: underline; }
+.footer-copyright { margin-top: 0.3rem; font-size: 0.8rem; color: var(--c-text-muted); }
+
+.opinion-copyright-notice { font-size: 0.82rem; color: var(--c-text-muted); margin: 1rem 0 0.5rem; }
 
 .privacy-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; }
 .privacy-table th { text-align: left; padding: 0.4rem 0.7rem; background: var(--c-surface-alt);
