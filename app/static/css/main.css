@@ -1447,6 +1447,24 @@ body.admin .page-header {
 }
 body.admin .page-header h1 { margin: 0; }
 
+/* ── Story cards ────────────────────────────────────────────────────────────── */
+.story-card {
+  border-left: 3px solid var(--c-accent);
+  background: var(--c-surface-alt);
+}
+.story-card-header { margin-bottom: 0.4rem; }
+.story-badge {
+  display: inline-block;
+  background: var(--c-accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15em 0.55em;
+  border-radius: 3px;
+}
+
 /* ── Redactional cards ─────────────────────────────────────────────────────── */
 .redactional-card {
   border-left: 3px solid var(--accent, #2563eb);

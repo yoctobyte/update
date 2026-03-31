@@ -1,0 +1,34 @@
+{#
+  Story card — rendered when item.is_story_card is True in article lists.
+  Expects: article (a Story instance, named 'article' to match loop variable)
+#}
+<article class="article-card story-card">
+  <h2 class="article-title">
+    <a href="{{ story_url(article) }}">{{ article.title }}</a>
+  </h2>
+
+  <a href="{{ story_url(article) }}" class="article-snippet-link">
+    <p class="article-snippet">{{ article.description }}</p>
+  </a>
+
+  <div class="article-footer">
+    <div class="article-sources">
+      {% for a in article.articles %}
+        {% if a.summary %}
+          <a href="{{ a.url }}" target="_blank" rel="noopener"
+             title="{{ a.source.name }}" class="source-favicon-link">
+            <img src="{{ url_for('main.source_favicon', source_id=a.source.id) }}"
+                 class="source-favicon" alt="{{ a.source.name }}"
+                 width="16" height="16" loading="lazy">
+          </a>
+        {% endif %}
+      {% endfor %}
+      <time class="article-date">
+        {%- if article._display_date -%}
+          {{ article._display_date.strftime('%-d %b %H:%M') }}
+        {%- endif -%}
+      </time>
+    </div>
+    <a href="{{ story_url(article) }}" class="ext-indicator" title="Lees verhaal">↗</a>
+  </div>
+</article>

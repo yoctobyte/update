@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Deze week{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Deze week</h1>
+  <p class="page-description">Laatste 10–14 dagen, gerangschikt op belang.</p>
+</div>
+
+<div class="article-list">
+  {% for article in page_items %}
+    {% if article.is_story_card %}
+      {% include 'main/_story_card.html' %}
+    {% else %}
+    <article class="article-card{% if article.geo_scope not in ('local', none) %} article-card--national{% endif %}">
+      <h2 class="article-title">
+        <a href="{{ article_url(article) }}">{{ article.title }}</a>
+      </h2>
+
+      {% set desc = article.summary or article.short_text %}
+      {% if desc %}
+        <a href="{{ article_url(article) }}" class="article-snippet-link">
+          <p class="article-snippet">{{ desc }}</p>
+        </a>
+      {% endif %}
+
+      <div class="article-footer">
+        <div class="article-sources">
+          {% for src in sources_by_url.get(article.url, [article.source]) %}
+          <a href="{{ article.url }}" target="_blank" rel="noopener"
+             title="{{ src.name }}" class="source-favicon-link">
+            <img src="{{ url_for('main.source_favicon', source_id=src.id) }}"
+                 class="source-favicon"
+                 alt="{{ src.name }}"
+                 width="16" height="16"
+                 loading="lazy">
+          </a>
+          {% endfor %}
+          <time class="article-date">
+            {%- if article.published_at -%}
+              {{ article.published_at.strftime('%-d %b %H:%M') }}
+            {%- elif article.created_at -%}
+              {{ article.created_at.strftime('%-d %b %H:%M') }}
+            {%- endif -%}
+          </time>
+          {% if article.geo_scope == 'national' %}
+            <span class="geo-badge geo-national">nationaal</span>
+          {% elif article.geo_scope == 'region' %}
+            <span class="geo-badge geo-region">regio</span>
+          {% elif article.geo_scope == 'province' %}
+            <span class="geo-badge geo-province">provincie</span>
+          {% endif %}
+        </div>
+        <a href="{{ article.url }}" target="_blank" rel="noopener"
+           class="ext-indicator" title="Lees op {{ article.source.name }}">↗</a>
+      </div>
+    </article>
+    {% endif %}
+  {% else %}
+    <p>Nog geen nieuws in Deze week. Dit wordt automatisch gevuld.</p>
+  {% endfor %}
+</div>
+{% endblock %}

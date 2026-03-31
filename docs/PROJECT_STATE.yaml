@@ -1,0 +1,135 @@
+schema_version: 1
+last_updated: "2026-03-30 00:45 Europe/Amsterdam"
+project:
+  name: "lokaalnieuws"
+  branch: "dev"
+  commit: "1b57ad4"
+  live_branch: "main"
+  purpose: "Canonical structured project state for multi-agent handover."
+
+read_order:
+  - "AGENTS.md"
+  - "docs/PROJECT_STATE.yaml"
+  - "docs/PROJECT_META.md"
+  - "NOTES.md"
+
+progress:
+  summary:
+    - "Human-facing operational notes and agent-oriented meta handover docs are in place."
+    - "Shared multi-agent entrypoints now exist for OpenAI/Codex, Claude, and Gemini."
+    - "Story/verhaal cards are integrated into overview pages and detail flows."
+    - "Frontpage persistence now collapses to one representative article per public story."
+    - "Public bearer-token opinion edit flow has rate limiting."
+    - "Security review and themed-view concept docs were added on 2026-03-30."
+    - "A first lane implementation slice is complete: Uitgelicht now has a stable public route and homepage mapping is configurable."
+  recently_completed:
+    - id: "done-story-cards"
+      status: "done"
+      date: "2026-03-30"
+      item: "Integrated story/verhaal cards into overview pages and detail flows."
+    - id: "done-frontpage-collapse"
+      status: "done"
+      date: "2026-03-30"
+      item: "Aligned frontpage persistence with one representative article per public story."
+    - id: "done-opinion-rate-limit"
+      status: "done"
+      date: "2026-03-30"
+      item: "Rate-limited public bearer-token opinion edit route."
+    - id: "done-agent-handover"
+      status: "done"
+      date: "2026-03-30"
+      item: "Added project handover docs for humans and agents."
+    - id: "done-multi-agent-entrypoints"
+      status: "done"
+      date: "2026-03-30"
+      item: "Added AGENTS.md plus Claude/Gemini compatibility shims and a structured PROJECT_STATE file."
+    - id: "done-uitgelicht-route"
+      status: "done"
+      date: "2026-03-30"
+      item: "Added a stable public Uitgelicht route and an admin-controlled '/' mapping between Uitgelicht and lokaal nieuws."
+
+goals:
+  current_primary:
+    - id: "goal-multi-agent-state"
+      priority: "active"
+      item: "Make project progress, goals, bugs, and todos easy for multiple coding agents to discover and update consistently."
+    - id: "goal-lane-architecture"
+      priority: "active"
+      item: "Turn the Uitgelicht / Vandaag / Week concept into implementable schema, routing, and ranking changes."
+    - id: "goal-homepage-routing"
+      priority: "active"
+      item: "Keep homepage routing stable while allowing admin to choose the active main view."
+  product_direction:
+    - "Experiment-first themed views."
+    - "Stable lane URLs even while homepage mapping changes."
+    - "No public-cookie-heavy design unless strongly justified."
+
+bugs:
+  known:
+    - id: "bug-scheduler-startup-history"
+      severity: "medium"
+      status: "mitigated"
+      item: "Scheduler startup previously fired incorrectly during CLI and debug flows; guards were added and the incident is documented."
+      source: "docs/postmortem_scheduler_startup_2026-03-27.md"
+    - id: "bug-admin-ssrf-followup"
+      severity: "medium"
+      status: "open"
+      item: "Admin-only SSRF hardening still needs follow-up work."
+      source: "docs/security_review_2026-03-30.md"
+    - id: "bug-trusted-markdown-followup"
+      severity: "medium"
+      status: "open"
+      item: "Trusted-markdown hardening remains a follow-up item."
+      source: "docs/security_review_2026-03-30.md"
+
+todos:
+  active:
+    - id: "todo-agent-entrypoints"
+      priority: "now"
+      status: "done"
+      item: "Add shared agent entrypoints and structured project state so OpenAI, Claude, and Gemini workflows converge on the same in-repo truth."
+    - id: "todo-uitgelicht-route"
+      priority: "now"
+      status: "done"
+      item: "Introduce a stable public Uitgelicht route and let admin choose whether '/' maps to Uitgelicht or lokaal nieuws."
+    - id: "todo-lane-schema"
+      priority: "next"
+      status: "open"
+      item: "Design schema changes for Uitgelicht / Vandaag / Week."
+    - id: "todo-lane-ranking"
+      priority: "next"
+      status: "open"
+      item: "Build experiment-friendly lane ranking with higher/lower/similar comparisons and explainable metadata."
+    - id: "todo-homepage-setting"
+      priority: "next"
+      status: "done"
+      item: "Allow admin to choose which main view maps to '/'."
+    - id: "todo-security-followup"
+      priority: "later"
+      status: "open"
+      item: "Revisit admin-only SSRF and trusted-markdown issues separately from public-surface work."
+
+constraints:
+  runtime:
+    - "The repo may be actively running for crawlers and public traffic."
+    - "Do not use run.sh casually from dev."
+    - "Prefer read-only inspection unless the task needs code changes."
+  git:
+    - "Do not sweep unrelated untracked files into commits."
+    - "Treat existing untracked areas as intentional unless told otherwise."
+  product:
+    - "Avoid shaping primary navigation around query parameters like '/?topic=...'."
+    - "Keep lane URLs stable while experiments continue."
+
+dirty_state:
+  known_untracked:
+    - ".wageningen-test.pid"
+    - "dossiers/"
+    - "histsearch/"
+    - "poo/"
+
+update_protocol:
+  - "Update this file after substantial progress."
+  - "Keep timestamps explicit in YYYY-MM-DD HH:MM TZ form."
+  - "Reflect matching context changes in docs/PROJECT_META.md."
+  - "Prefer editing shared source-of-truth files instead of vendor-specific shims."

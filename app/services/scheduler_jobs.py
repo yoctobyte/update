@@ -129,6 +129,45 @@ def _refresh_topic_counts(app) -> None:
         logger.info("Topic article counts refreshed (%d topics with articles)", len(counts))
 
 
+def _describe_pending_stories(app) -> None:
+    """Generate descriptions for stories that have 2+ summarized articles but no description yet.
+
+    Acts as a safety net for stories whose articles were not yet summarized when
+    clustering ran — the auto_merge trigger fires immediately but articles may
+    arrive with a delay on their summaries.
+    """
+    from ..models import Story
+    from .clustering import generate_story_description
+
+    with app.app_context():
+        candidates = Story.query.filter(
+            Story.description.is_(None),
+            Story.status.in_(["suggested", "active"]),
+        ).all()
+
+        updated = 0
+        for story in candidates:
+            summarized = [a for a in story.articles if a.summary]
+            if len(summarized) >= 2:
+                if generate_story_description(story):
+                    updated += 1
+
+        if updated:
+            logger.info("DESCRIBE: generated descriptions for %d stories", updated)
+
+
+def _recompute_vandaag(app) -> None:
+    from .news_lanes import recompute_lane
+    from ..models.news_lane import LANE_TODAY
+    recompute_lane(app, LANE_TODAY)
+
+
+def _recompute_week(app) -> None:
+    from .news_lanes import recompute_lane
+    from ..models.news_lane import LANE_WEEK
+    recompute_lane(app, LANE_WEEK)
+
+
 def register_jobs(scheduler, app) -> None:
     from .fetcher import fetch_all_active
     from .extractor import extract_all_pending, tag_untagged_articles
@@ -242,6 +281,36 @@ def register_jobs(scheduler, app) -> None:
         args=[app],
         trigger="interval",
         minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="describe_pending_stories",
+        func=_wrap("describe_pending_stories", _describe_pending_stories),
+        args=[app],
+        trigger="interval",
+        minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="recompute_vandaag",
+        func=_wrap("recompute_vandaag", _recompute_vandaag),
+        args=[app],
+        trigger="interval",
+        minutes=30,
+        next_run_time=now,
+        misfire_grace_time=STARTUP_GRACE,
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        id="recompute_week",
+        func=_wrap("recompute_week", _recompute_week),
+        args=[app],
+        trigger="interval",
+        hours=3,
         next_run_time=now,
         misfire_grace_time=STARTUP_GRACE,
         replace_existing=True,

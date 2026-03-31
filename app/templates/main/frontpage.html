@@ -1,14 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Voorpagina{% endblock %}
+{% block title %}Uitgelicht{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1>Voorpagina</h1>
+  <h1>Uitgelicht</h1>
 </div>
 
 <div class="article-list">
   {% for article in page_items %}
     {% if article.is_redactional_post %}
       {% include 'main/_redactional_card.html' %}
+    {% elif article.is_story_card %}
+      {% include 'main/_story_card.html' %}
     {% else %}
     <article class="article-card{% if article.geo_scope not in ('local', none) %} article-card--national{% endif %}">
       <h2 class="article-title">
@@ -55,7 +57,7 @@
     </article>
     {% endif %}
   {% else %}
-    <p>Geen artikelen op de voorpagina. Pas de regels aan in het <a href="{{ url_for('admin.frontpage_settings') }}">beheer</a>.</p>
+    <p>Geen artikelen in Uitgelicht. Pas de regels aan in het <a href="{{ url_for('admin.frontpage_settings') }}">beheer</a>.</p>
   {% endfor %}
 </div>
 {% endblock %}

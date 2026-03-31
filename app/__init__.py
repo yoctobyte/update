@@ -122,6 +122,9 @@ def create_app(town: str = None) -> Flask:
     def _redactie_url(post):
         return _url_for("main.redactie_post", post_id=post.id, slug=_slugify(post.title or ""))
 
+    def _story_url(story):
+        return _url_for("main.redactie_detail", story_id=story.id, slug=_slugify(story.title or ""))
+
     def _event_url(event):
         if getattr(event, "is_redactie", False):
             return _url_for("main.redactie_event_detail", event_id=event.id, slug=_slugify(event.title or ""))
@@ -135,9 +138,15 @@ def create_app(town: str = None) -> Flask:
         site_town=site_town,
         article_url=_article_url,
         redactie_url=_redactie_url,
+        story_url=_story_url,
         event_url=_event_url,
         static_version=_static_version,
     )
+
+    @app.context_processor
+    def inject_homepage_view():
+        from .services.frontpage import get_homepage_view
+        return {"homepage_view": get_homepage_view()}
 
     # Register /<town_slug> as the canonical local news URL.
     # /lokaal redirects here (301). The view function is defined in the blueprint

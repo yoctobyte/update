@@ -67,6 +67,30 @@
     </section>
   {% endif %}
 
+  {# Similar stories found via vector similarity #}
+  {% if similar_stories %}
+    <section class="article-detail-section">
+      <h2>Gerelateerde verhalen</h2>
+      {% for rel_story, rel_articles in similar_stories %}
+        <div class="related-story">
+          <a href="{{ url_for('main.redactie_detail', story_id=rel_story.id) }}" class="related-story-title">
+            ↗ {{ rel_story.title }}
+          </a>
+          <ul class="related-article-list">
+            {% for a in rel_articles[:5] %}
+              <li>
+                <img src="{{ url_for('main.source_favicon', source_id=a.source.id) }}"
+                     class="source-favicon" alt="{{ a.source.name }}" width="14" height="14">
+                <a href="{{ article_url(a) }}">{{ a.title }}</a>
+                <span class="meta-muted">— {{ a.source.name }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
   {# Vector similarity: related articles #}
   {% if similar_articles %}
     <section class="article-detail-section">

@@ -28,6 +28,16 @@ def _app_context(app):
 logger = logging.getLogger(__name__)
 
 WINDOW_HOURS = 72
+HOMEPAGE_VIEW_UITGELICHT = "uitgelicht"
+HOMEPAGE_VIEW_LOKAAL = "lokaal"
+HOMEPAGE_VIEW_VANDAAG = "vandaag"
+HOMEPAGE_VIEW_WEEK = "week"
+HOMEPAGE_VIEW_CHOICES = {
+    HOMEPAGE_VIEW_UITGELICHT,
+    HOMEPAGE_VIEW_LOKAAL,
+    HOMEPAGE_VIEW_VANDAAG,
+    HOMEPAGE_VIEW_WEEK,
+}
 
 
 def _get_llm_prompt() -> str | None:
@@ -58,6 +68,39 @@ def _is_worthy(article) -> bool:
 
     # intl → never on front page
     return False
+
+
+def _collapse_story_duplicates(articles: list[Article]) -> list[Article]:
+    """Keep one representative article per public story.
+
+    Frontpage storage remains article-based, but overview templates may render a
+    qualifying article as a story card. Collapsing here keeps `frontpage_items`
+    aligned with that visible result instead of storing multiple member articles
+    from the same story.
+
+    Only active stories with a description are considered "public stories".
+    Stories that are still suggested/draft-like do not collapse their members.
+    """
+    result: list[Article] = []
+    seen_story_ids: set[int] = set()
+
+    for article in articles:
+        public_story = next(
+            (
+                story for story in article.stories
+                if story.status == "active" and story.description
+            ),
+            None,
+        )
+        if public_story is None:
+            result.append(article)
+            continue
+        if public_story.id in seen_story_ids:
+            continue
+        seen_story_ids.add(public_story.id)
+        result.append(article)
+
+    return result
 
 
 def evaluate_pending(app) -> int:
@@ -125,6 +168,7 @@ def update_frontpage(app, dry_run: bool = False) -> list:
         )
 
         worthy = [a for a in candidates if _is_worthy(a)]
+        worthy = _collapse_story_duplicates(worthy)
 
         if dry_run:
             return worthy
@@ -166,3 +210,28 @@ def get_current_frontpage():
 
 def frontpage_enabled() -> bool:
     return SiteSetting.get("frontpage_enabled", "0") == "1"
+
+
+def get_homepage_view() -> str:
+    """Return which main view should currently map to '/'.
+
+    Explicit homepage selection wins. Older installs fall back to the legacy
+    frontpage_enabled flag so existing behaviour is preserved until configured.
+    """
+    value = SiteSetting.get("homepage_view", "").strip().lower()
+    if value in HOMEPAGE_VIEW_CHOICES:
+        return value
+    return HOMEPAGE_VIEW_UITGELICHT if frontpage_enabled() else HOMEPAGE_VIEW_LOKAAL
+
+
+def set_homepage_view(value: str) -> None:
+    """Persist the public homepage view and keep the legacy flag aligned."""
+    if value not in HOMEPAGE_VIEW_CHOICES:
+        raise ValueError(f"Unsupported homepage view: {value}")
+    SiteSetting.set("homepage_view", value)
+    SiteSetting.set("frontpage_enabled", "1" if value == HOMEPAGE_VIEW_UITGELICHT else "0")
+
+
+def is_lane_view(value: str) -> bool:
+    """Return True if value is one of the algorithm-driven lanes (vandaag/week)."""
+    return value in (HOMEPAGE_VIEW_VANDAAG, HOMEPAGE_VIEW_WEEK)
