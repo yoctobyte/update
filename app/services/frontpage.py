@@ -30,7 +30,14 @@ logger = logging.getLogger(__name__)
 WINDOW_HOURS = 72
 HOMEPAGE_VIEW_UITGELICHT = "uitgelicht"
 HOMEPAGE_VIEW_LOKAAL = "lokaal"
-HOMEPAGE_VIEW_CHOICES = {HOMEPAGE_VIEW_UITGELICHT, HOMEPAGE_VIEW_LOKAAL}
+HOMEPAGE_VIEW_VANDAAG = "vandaag"
+HOMEPAGE_VIEW_WEEK = "week"
+HOMEPAGE_VIEW_CHOICES = {
+    HOMEPAGE_VIEW_UITGELICHT,
+    HOMEPAGE_VIEW_LOKAAL,
+    HOMEPAGE_VIEW_VANDAAG,
+    HOMEPAGE_VIEW_WEEK,
+}
 
 
 def _get_llm_prompt() -> str | None:
@@ -223,3 +230,8 @@ def set_homepage_view(value: str) -> None:
         raise ValueError(f"Unsupported homepage view: {value}")
     SiteSetting.set("homepage_view", value)
     SiteSetting.set("frontpage_enabled", "1" if value == HOMEPAGE_VIEW_UITGELICHT else "0")
+
+
+def is_lane_view(value: str) -> bool:
+    """Return True if value is one of the algorithm-driven lanes (vandaag/week)."""
+    return value in (HOMEPAGE_VIEW_VANDAAG, HOMEPAGE_VIEW_WEEK)

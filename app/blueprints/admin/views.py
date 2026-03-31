@@ -1249,7 +1249,9 @@ _FRONTPAGE_RULES = [
 ]
 _HOMEPAGE_VIEW_RULES = [
     ("uitgelicht", "Uitgelicht"),
-    ("lokaal", "Lokaal"),
+    ("vandaag",    "Vandaag"),
+    ("week",       "Week"),
+    ("lokaal",     "Lokaal nieuws"),
 ]
 
 
@@ -1293,11 +1295,13 @@ def frontpage_settings():
             flash("Homepagina staat nu op lokaal nieuws.", "success")
 
         elif action == "save_homepage_view":
+            from ...services.frontpage import HOMEPAGE_VIEW_CHOICES
             selected = request.form.get("homepage_view", "").strip().lower()
-            if selected in {"uitgelicht", "lokaal"}:
+            if selected in HOMEPAGE_VIEW_CHOICES:
                 set_homepage_view(selected)
-                label = "Uitgelicht" if selected == "uitgelicht" else "lokaal nieuws"
-                flash(f"Homepagina ingesteld op {label}.", "success")
+                labels = {"uitgelicht": "Uitgelicht", "vandaag": "Vandaag",
+                          "week": "Week", "lokaal": "Lokaal nieuws"}
+                flash(f"Homepagina ingesteld op {labels.get(selected, selected)}.", "success")
             else:
                 flash("Ongeldige homepage-keuze.", "error")
 
@@ -1334,6 +1338,115 @@ def frontpage_preview():
         topics=topics,
         sources_by_url=_sources_by_url(articles),
         count=len(articles),
+    )
+
+
+# ── Nieuws lanes (Vandaag / Week) ─────────────────────────────────────────────
+
+@bp.route("/nieuws-lanes", methods=["GET", "POST"])
+@login_required
+def news_lanes():
+    """Editorial admin for Vandaag and Week algorithm-driven lanes."""
+    from ...models.news_lane import NewsLaneItem, LANE_TODAY, LANE_WEEK
+    from ...services.news_lanes import recompute_lane, get_lane_items
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        item_id = request.form.get("item_id", type=int)
+
+        if action in ("pin", "unpin", "suppress", "unsuppress", "remove") and item_id:
+            item = NewsLaneItem.query.get_or_404(item_id)
+            if action == "pin":
+                item.pinned = True
+                item.editorial_note = item.editorial_note or "pinned"
+            elif action == "unpin":
+                item.pinned = False
+                if item.editorial_note == "pinned":
+                    item.editorial_note = None
+            elif action == "suppress":
+                item.suppressed = True
+            elif action == "unsuppress":
+                item.suppressed = False
+            elif action == "remove":
+                item.removed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            db.session.commit()
+            flash("Opgeslagen.", "success")
+
+        elif action == "add_article":
+            lane = request.form.get("lane", "").strip()
+            article_id = request.form.get("article_id", type=int)
+            note = request.form.get("note", "").strip() or "handmatig toegevoegd"
+            if lane in (LANE_TODAY, LANE_WEEK) and article_id:
+                art = Article.query.get(article_id)
+                if art:
+                    item = NewsLaneItem(
+                        lane=lane,
+                        article_id=article_id,
+                        pinned=True,
+                        editorial_note=note,
+                        computed_at=datetime.utcnow(),
+                        blend_score=1.0,
+                    )
+                    db.session.add(item)
+                    db.session.commit()
+                    flash(f"Artikel '{art.title[:60]}' toegevoegd aan {lane}.", "success")
+                else:
+                    flash("Artikel niet gevonden.", "error")
+            else:
+                flash("Ongeldige invoer.", "error")
+
+        elif action == "add_story":
+            lane = request.form.get("lane", "").strip()
+            story_id = request.form.get("story_id", type=int)
+            note = request.form.get("note", "").strip() or "handmatig toegevoegd"
+            if lane in (LANE_TODAY, LANE_WEEK) and story_id:
+                story = Story.query.get(story_id)
+                if story:
+                    item = NewsLaneItem(
+                        lane=lane,
+                        story_id=story_id,
+                        pinned=True,
+                        editorial_note=note,
+                        computed_at=datetime.utcnow(),
+                        blend_score=1.0,
+                    )
+                    db.session.add(item)
+                    db.session.commit()
+                    flash(f"Verhaal '{story.title[:60]}' toegevoegd aan {lane}.", "success")
+                else:
+                    flash("Verhaal niet gevonden.", "error")
+            else:
+                flash("Ongeldige invoer.", "error")
+
+        elif action in ("regenerate_today", "regenerate_week", "regenerate_all"):
+            if action in ("regenerate_today", "regenerate_all"):
+                n = recompute_lane(None, LANE_TODAY)
+                flash(f"Vandaag opnieuw berekend: {n} items.", "success")
+            if action in ("regenerate_week", "regenerate_all"):
+                n = recompute_lane(None, LANE_WEEK)
+                flash(f"Week opnieuw berekend: {n} items.", "success")
+
+        return redirect(url_for("admin.news_lanes"))
+
+    # GET: load items for both lanes (all, including suppressed/removed for admin view)
+    today_items = (
+        NewsLaneItem.query
+        .filter(NewsLaneItem.lane == LANE_TODAY, NewsLaneItem.removed_at.is_(None))
+        .order_by(NewsLaneItem.pinned.desc(), db.func.coalesce(NewsLaneItem.blend_score, 0).desc())
+        .all()
+    )
+    week_items = (
+        NewsLaneItem.query
+        .filter(NewsLaneItem.lane == LANE_WEEK, NewsLaneItem.removed_at.is_(None))
+        .order_by(NewsLaneItem.pinned.desc(), db.func.coalesce(NewsLaneItem.blend_score, 0).desc())
+        .all()
+    )
+    return render_template(
+        "admin/news_lanes.html",
+        today_items=today_items,
+        week_items=week_items,
+        LANE_TODAY=LANE_TODAY,
+        LANE_WEEK=LANE_WEEK,
     )
 
 

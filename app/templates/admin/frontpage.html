@@ -7,24 +7,14 @@
 {# ── Status banner ── #}
 <div class="card mb-2">
   <h2>Status</h2>
-  {% if enabled %}
-    <p class="status-ok">Uitgelicht is actief. De huidige homepage op <code>/</code> staat op <strong>{{ 'Uitgelicht' if homepage_view == 'uitgelicht' else 'lokaal nieuws' }}</strong>.</p>
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="action" value="disable">
-      <button type="submit" class="btn btn-danger">Zet / op lokaal nieuws</button>
-    </form>
-  {% else %}
-    <p class="status-warn">De homepage op <code>/</code> staat nu op <strong>lokaal nieuws</strong>. Uitgelicht blijft beschikbaar op <code>/uitgelicht</code>.</p>
-    <div class="btn-group">
-      <a href="{{ url_for('admin.frontpage_preview') }}" class="btn">Preview bekijken</a>
-      <form method="post" style="display:inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="action" value="enable">
-        <button type="submit" class="btn btn-primary">Zet / op Uitgelicht</button>
-      </form>
-    </div>
-  {% endif %}
+  {% set view_labels = {'uitgelicht': 'Uitgelicht', 'vandaag': 'Vandaag', 'week': 'Week', 'lokaal': 'Lokaal nieuws'} %}
+  <p class="{{ 'status-ok' if homepage_view != 'lokaal' else 'status-warn' }}">
+    Homepage <code>/</code> staat op <strong>{{ view_labels.get(homepage_view, homepage_view) }}</strong>.
+  </p>
+  <div class="btn-group">
+    <a href="{{ url_for('admin.frontpage_preview') }}" class="btn">Uitgelicht preview</a>
+    <a href="{{ url_for('admin.news_lanes') }}" class="btn">Vandaag/Week beheer</a>
+  </div>
 </div>
 
 <div class="card mb-2">

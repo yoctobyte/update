@@ -324,10 +324,17 @@ def index():
     """Root: dispatch to the configured main public view."""
     from ...services.frontpage import (
         HOMEPAGE_VIEW_UITGELICHT,
+        HOMEPAGE_VIEW_VANDAAG,
+        HOMEPAGE_VIEW_WEEK,
         get_homepage_view,
     )
-    if get_homepage_view() == HOMEPAGE_VIEW_UITGELICHT:
+    view = get_homepage_view()
+    if view == HOMEPAGE_VIEW_UITGELICHT:
         return _uitgelicht_response()
+    if view == HOMEPAGE_VIEW_VANDAAG:
+        return _vandaag_response()
+    if view == HOMEPAGE_VIEW_WEEK:
+        return _week_response()
     return _lokaal_response()
 
 
@@ -346,10 +353,67 @@ def _uitgelicht_response():
     )
 
 
+def _resolve_lane_items(lane_items):
+    """Convert NewsLaneItem list to a renderable list (Articles/Stories).
+
+    Pinned items may be editorial (no computed_at). We render them regardless.
+    Story items get _display_date and is_story_card injected so _story_card.html works.
+    """
+    result = []
+    for item in lane_items:
+        if item.story_id and item.story:
+            story = item.story
+            if not hasattr(story, "_display_date"):
+                dates = [a.published_at or a.created_at for a in story.articles
+                         if a.published_at or a.created_at]
+                story._display_date = max(dates) if dates else story.created_at
+            story.is_story_card = True
+            result.append(story)
+        elif item.article_id and item.article:
+            result.append(item.article)
+    return result
+
+
+def _vandaag_response():
+    from ...services.news_lanes import get_lane_items, LANE_TODAY
+    items = get_lane_items(LANE_TODAY)
+    rendered = _resolve_lane_items(items)
+    articles = [r for r in rendered if not getattr(r, "is_story_card", False)]
+    return render_template(
+        "main/vandaag.html",
+        page_items=rendered,
+        sources_by_url=_sources_by_url(articles),
+    )
+
+
+def _week_response():
+    from ...services.news_lanes import get_lane_items, LANE_WEEK
+    items = get_lane_items(LANE_WEEK)
+    rendered = _resolve_lane_items(items)
+    articles = [r for r in rendered if not getattr(r, "is_story_card", False)]
+    return render_template(
+        "main/week.html",
+        page_items=rendered,
+        sources_by_url=_sources_by_url(articles),
+    )
+
+
 @bp.route("/uitgelicht")
 def uitgelicht():
     """Stable route for the curated main lane."""
     return _uitgelicht_response()
+
+
+@bp.route("/vandaag")
+def vandaag():
+    """Stable route for the Vandaag lane (last ~42 hours)."""
+    return _vandaag_response()
+
+
+@bp.route("/week")
+def week():
+    """Stable route for the Week lane (last ~12 days)."""
+    return _week_response()
 
 
 @bp.route("/nieuws/<int:article_id>")
@@ -1120,6 +1184,9 @@ def sitemap_xml():
     # Static pages
     static_pages = [
         ("/",              "daily",   "1.0"),
+        ("/uitgelicht",    "daily",   "0.9"),
+        ("/vandaag",       "daily",   "0.9"),
+        ("/week",          "weekly",  "0.8"),
         (f"/{town_slug}",  "daily",   "0.9"),
         ("/regio",         "daily",   "0.8"),
         ("/provincie",     "daily",   "0.8"),
