@@ -1,0 +1,109 @@
+# published.yaml
+# Dit bestand vertelt de webserver welke dossiers klaar zijn voor publicatie.
+# Je kunt dossiers handmatig 'aan' (publish: true) of 'uit' (publish: false) zetten.
+
+dossiers:
+  - id: "basisinkomen"
+    title: "Dossier: Basisinkomen"
+    path: "basisinkomen/index.md"
+    publish: true
+    description: "Een overzicht van het concept basisinkomen, wereldwijde experimenten en politieke discussies."
+    published_date: "2026-03-30"
+
+  - id: "julianastraat_wageningen"
+    title: "Historie van de Julianastraat, Wageningen"
+    path: "julianastraat_wageningen/index.md"
+    publish: true
+    description: "Informatie en documentatie over de geschiedenis van de Julianastraat en omstreken."
+    published_date: "2026-03-25"
+
+  - id: "wageningen_haven"
+    title: "Historisch Dossier: Haven van Wageningen"
+    path: "wageningen_haven/index.md"
+    publish: true
+    description: "Geschiedenis van bedrijvigheid, industrie en milieu-impact in de haven van Wageningen."
+    published_date: "2026-03-25"
+
+  - id: "wwii"
+    title: "Wageningen in de Tweede Wereldoorlog"
+    path: "wwii/index.md"
+    publish: true
+    description: "De impact van de Tweede Wereldoorlog op Wageningen en haar bewoners."
+    published_date: "2026-03-27"
+
+  - id: "wageningse_politiek"
+    title: "De Wageningse Politiek"
+    path: "wageningse_politiek/index.md"
+    publish: true
+    description: "Achtergronden en actualiteiten uit de politiek van de gemeente Wageningen."
+    published_date: "2026-03-30"
+
+  - id: "ecologisch_buurtschap_voormalig_pieter_pauw"
+    title: "Ecologisch Buurtschap voormalig Pieter Pauw"
+    path: "Ecologisch Buurtschap voormalig Pieter Pauw/index.md"
+    publish: true
+    description: "Achtergrond over Ecodorp Ppauw en de ecologische woongemeenschap."
+    published_date: "2026-03-30"
+
+  - id: "bestuurders_geschiedenis"
+    title: "Geschiedenis van Bestuurders"
+    path: "bestuurders_geschiedenis/index.md"
+    publish: true
+    description: "Historisch overzicht van de burgemeesters en bestuurders van Wageningen."
+    published_date: "2026-03-30"
+
+  - id: "ijstijd"
+    title: "De IJstijd in Wageningen"
+    path: "ijstijd/index.md"
+    publish: false
+    description: "De geologische ontstaansgeschiedenis tijdens de ijstijden."
+    published_date: "2026-03-30"
+
+  - id: "parenco"
+    title: "Dossier Parenco"
+    path: "parenco/index.md"
+    publish: true
+    description: "Dossier over de papierfabriek Parenco."
+    published_date: "2026-03-30"
+
+  - id: "utrechtse_heuvelrug"
+    title: "De Utrechtse Heuvelrug"
+    path: "utrechtse_heuvelrug/index.md"
+    publish: false
+    description: "Geschiedenis en ecologie van de Utrechtse Heuvelrug."
+    published_date: "2026-03-30"
+
+  - id: "wageningen_archeologie"
+    title: "Archeologie in Wageningen"
+    path: "wageningen_archeologie/index.md"
+    publish: true
+    description: "Archeologische vondsten in en rond Wageningen."
+    published_date: "2026-03-30"
+
+  - id: "wageningen_bruil"
+    title: "Wageningen en Bruil"
+    path: "wageningen_bruil/index.md"
+    publish: false
+    description: "Dossier over het Wageningse bouwbedrijf Bruil."
+    published_date: "2026-03-30"
+
+  - id: "wageningen_geschiedenis"
+    title: "Algemene Geschiedenis van Wageningen"
+    path: "wageningen_geschiedenis/index.md"
+    publish: true
+    description: "De brede ontstaansgeschiedenis en stadsrechten van Wageningen."
+    published_date: "2026-03-30"
+
+  - id: "wageningen_mmb"
+    title: "Maatschappelijk Meedoen Budget"
+    path: "wageningen_mmb/index.md"
+    publish: true
+    description: "Dossier over het Maatschappelijk Meedoen Budget (MMB)."
+    published_date: "2026-03-30"
+
+  - id: "wageningen_univesiteit"
+    title: "De Wageningen Universiteit (WUR)"
+    path: "wageningen_univesiteit/index.md"
+    publish: true
+    description: "De geschiedenis en impact van Wageningen University & Research."
+    published_date: "2026-03-30"
