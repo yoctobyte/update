@@ -83,7 +83,7 @@ def create_app(town: str = None) -> Flask:
     # Scheduler — MemoryJobStore since jobs are always re-registered at startup
     scheduler.configure(
         jobstores={"default": {"type": "memory"}},
-        executors={"default": {"type": "threadpool", "max_workers": 2}},
+        executors={"default": {"type": "threadpool", "max_workers": 6}},
         job_defaults={"coalesce": True, "max_instances": 1},
     )
 
