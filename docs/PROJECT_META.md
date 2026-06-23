@@ -1,6 +1,6 @@
 # Project Meta
 **Purpose:** shared deep handover, constraints, and agent-coordination file
-**Last updated:** 2026-03-30
+**Last updated:** 2026-03-31
 **Branch context:** `dev`
 **Live serving assumption:** production runs from `main`; do not disturb the running instance from `dev`
 
@@ -86,6 +86,7 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
 
 See:
 - [security_review_2026-03-30.md](/home/user/lokaalnieuws/docs/security_review_2026-03-30.md)
+- [security_audit_2026-03-31.md](/home/user/lokaalnieuws/docs/security_audit_2026-03-31.md)
 - [todo_next_frontpage_today_weekly_2026-03-30.md](/home/user/lokaalnieuws/docs/todo_next_frontpage_today_weekly_2026-03-30.md)
 
 ## Todo
@@ -101,6 +102,7 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
   - possible merge-hint metadata
 - Preserve the current no-cookie public design unless there is a strong reason to change it.
 - Revisit admin-only SSRF and trusted-markdown issues later, separately from public-surface work.
+- Fold the 2026-03-31 broader security audit into a concrete remediation order when security work resumes.
 
 ## Done
 
@@ -112,6 +114,7 @@ Timestamp: 2026-03-30 00:00 Europe/Amsterdam
   - `10 per minute; 30 per hour`
 - Public-facing security review was documented.
 - Themed-view concept/design note was documented and refined.
+- A broader read-only security audit was documented in `docs/security_audit_2026-03-31.md`, confirming no obvious unauthenticated server-compromise path while recording trust-boundary issues around markdown, SSRF, SVG uploads, cookie config, and bearer-link lifetime.
 
 Recent commit:
 - `3835dcb` — `Add story cards to overviews and harden public edit flow`
@@ -128,6 +131,7 @@ If another agent picks this up next:
 - Then read:
   - [NOTES.md](/home/user/lokaalnieuws/NOTES.md)
   - [security_review_2026-03-30.md](/home/user/lokaalnieuws/docs/security_review_2026-03-30.md)
+  - [security_audit_2026-03-31.md](/home/user/lokaalnieuws/docs/security_audit_2026-03-31.md)
   - [todo_next_frontpage_today_weekly_2026-03-30.md](/home/user/lokaalnieuws/docs/todo_next_frontpage_today_weekly_2026-03-30.md)
 - Assume `dev` is not the live branch.
 - Assume the running site should not be disturbed.
@@ -179,6 +183,66 @@ Timestamp: YYYY-MM-DD HH:MM TZ
 ```
 
 ## Update
+
+Timestamp: 2026-04-02 20:16 Europe/Amsterdam
+
+### Done
+- Audited repeated ORM/SQL query patterns against current index coverage.
+- Added Alembic migration `0023_query_indexes.py` for missing composite indexes on:
+  - article section listings / extraction queue
+  - extraction rule lookup
+  - news lane ordering
+  - story ordering
+  - opinion moderation/public ordering
+
+### Todo
+- Apply migration `0023` to each town database that should receive the new indexes.
+- Re-run query-plan checks after deployment/migration to confirm the temp-sort paths are gone for the targeted queries.
+
+### Handover
+- The query/index audit used real `EXPLAIN QUERY PLAN` checks against `data/wageningen/database.db`.
+- The largest observed non-article table was `news_lane_items`, so lane ordering indexes were prioritized.
+
+### Git
+- branch: `dev`
+- commit:
+- dirty files left:
+  - `.wageningen-test.pid`
+  - `docs/security_audit_2026-03-31.md`
+  - `histsearch/`
+  - `poo/`
+
+## Update
+
+Timestamp: 2026-03-31 21:00 Europe/Amsterdam
+
+### Done
+- Performed a broader read-only security audit of the application code.
+- Recorded the audit in `docs/security_audit_2026-03-31.md`.
+- Confirmed the earlier public-surface review still broadly holds: no obvious public auth bypass, arbitrary file read, or RCE path was found from static inspection.
+- Expanded the tracked follow-up set to include:
+  - trusted-markdown stored-XSS risk
+  - incomplete admin-side SSRF hardening
+  - editorial SVG upload risk
+  - deployment-sensitive admin cookie security
+  - non-expiring pending opinion edit links
+
+### Todo
+- Convert the 2026-03-31 audit findings into a remediation sequence when security work is prioritized.
+- Keep the earlier public-surface review and the broader audit note aligned if mitigations land.
+
+### Handover
+- If security work resumes, read both `docs/security_review_2026-03-30.md` and `docs/security_audit_2026-03-31.md`.
+- Treat the markdown, SSRF, and SVG issues as trust-boundary problems rather than generic anonymous-public exploits.
+
+### Git
+- branch: `dev`
+- commit: `5cc2302`
+- dirty files left:
+  - `.wageningen-test.pid`
+  - `dossiers/`
+  - `histsearch/`
+  - `poo/`
 
 Timestamp: 2026-03-30 00:45 Europe/Amsterdam
 

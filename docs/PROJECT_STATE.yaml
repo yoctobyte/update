@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: "2026-03-30 00:45 Europe/Amsterdam"
+last_updated: "2026-04-02 20:16 Europe/Amsterdam"
 project:
   name: "lokaalnieuws"
   branch: "dev"
@@ -22,6 +22,8 @@ progress:
     - "Public bearer-token opinion edit flow has rate limiting."
     - "Security review and themed-view concept docs were added on 2026-03-30."
     - "A first lane implementation slice is complete: Uitgelicht now has a stable public route and homepage mapping is configurable."
+    - "A broader read-only security audit note was added on 2026-03-31, expanding earlier public-surface findings to include admin trust-boundary issues."
+    - "A DB query/index audit added a follow-up migration for article listings, lane ordering, extraction rules, stories, and opinion queues."
   recently_completed:
     - id: "done-story-cards"
       status: "done"
@@ -47,6 +49,10 @@ progress:
       status: "done"
       date: "2026-03-30"
       item: "Added a stable public Uitgelicht route and an admin-controlled '/' mapping between Uitgelicht and lokaal nieuws."
+    - id: "done-query-index-audit"
+      status: "done"
+      date: "2026-04-02"
+      item: "Audited repeated DB query patterns and added migration 0023 for missing composite indexes."
 
 goals:
   current_primary:
@@ -81,6 +87,21 @@ bugs:
       status: "open"
       item: "Trusted-markdown hardening remains a follow-up item."
       source: "docs/security_review_2026-03-30.md"
+    - id: "bug-svg-upload-followup"
+      severity: "medium"
+      status: "open"
+      item: "Editorial SVG upload handling remains a stored client-side risk and should be revisited."
+      source: "docs/security_audit_2026-03-31.md"
+    - id: "bug-admin-cookie-config-followup"
+      severity: "low"
+      status: "open"
+      item: "Admin session cookie security still depends on deployment setting SESSION_COOKIE_SECURE correctly."
+      source: "docs/security_audit_2026-03-31.md"
+    - id: "bug-opinion-token-expiry-followup"
+      severity: "low"
+      status: "open"
+      item: "Public opinion edit bearer links have no expiry before moderation closes them."
+      source: "docs/security_audit_2026-03-31.md"
 
 todos:
   active:
@@ -108,6 +129,10 @@ todos:
       priority: "later"
       status: "open"
       item: "Revisit admin-only SSRF and trusted-markdown issues separately from public-surface work."
+    - id: "todo-security-audit-followup"
+      priority: "later"
+      status: "open"
+      item: "Prioritize remediation for trusted markdown, admin-side SSRF, SVG upload policy, secure admin cookie defaults, and opinion token expiry."
 
 constraints:
   runtime:
