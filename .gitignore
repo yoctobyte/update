@@ -39,3 +39,16 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Runtime PID files
+*.pid
+
+# Site-verification / ownership tokens (host-specific)
+poo/
+
+# Security audits/reviews — keep local, never publish
+docs/security_audit_*.md
+docs/security_review_*.md
+
+# Generated search output
+histsearch/output/
