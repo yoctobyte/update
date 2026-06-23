@@ -1,0 +1,15 @@
+[Unit]
+Description=Lokaalnieuws web application
+After=network.target
+
+[Service]
+Type=forking
+User=user
+WorkingDirectory=/home/user/lokaalnieuws
+ExecStart=/home/user/lokaalnieuws/run.sh
+PIDFile=/home/user/lokaalnieuws/.wageningen.pid
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
